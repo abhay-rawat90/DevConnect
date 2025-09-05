@@ -12,6 +12,7 @@ import Profile from "./pages/Profile";
 import EditProfile from "./pages/Edit-Profile";
 import EditSkills from "./pages/Edit-Skills";
 import SearchUsers from "./pages/SearchUsers";
+import Requests from "./pages/Requests";
 
 export default function App() {
   const { loading } = useAuth();
@@ -63,6 +64,11 @@ export default function App() {
       <Route path="/search" element={
         <PrivateRoute>
           <SearchUsers />
+        </PrivateRoute>
+      } />
+      <Route path = "/requests" element={
+        <PrivateRoute>
+          <Requests />
         </PrivateRoute>
       } />
       <Route path="*" element={<NotFound />} />

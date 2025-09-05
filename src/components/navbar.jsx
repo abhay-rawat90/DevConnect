@@ -11,6 +11,7 @@ const Navbar = () => {
             { user ? (
                 <>
                 <Link to="/search" className="hover:text-blue-300">Search</Link>
+                <Link to="/requests" className="hover:text-blue-300">Requests</Link>
                 <Link to="/dashboard" className="hover:text-blue-300">Dashboard</Link>
                 <Link to="/profile" className="hover:text-blue-300">Profile</Link>
                 <button onClick={logout} className="text-red-500 hover: underline">Logout</button>
