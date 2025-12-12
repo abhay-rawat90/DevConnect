@@ -29,6 +29,9 @@ app.use('/api/auth', authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/connections", connectionRoutes);
 app.use("/api/messages",messageRoutes);
+app.get('/', async (req, res) => {
+    res.send('API is working');
+});
 
 let onlineUsers = [];
 
