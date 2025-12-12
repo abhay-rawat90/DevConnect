@@ -67,6 +67,8 @@ router.post("/login",async (req,res) => {
                 username: user.username,
                 email: user.email,
                 skills: user.skills,
+                connections: user.connections,
+                profilePicture: user.profilePicture
             },
         });
     } 
