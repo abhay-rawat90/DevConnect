@@ -24,7 +24,7 @@ const EditProfile = () => {
 
     try {
       const res = await axios.put(
-        "http://localhost:5000/api/users/update",
+        `${import.meta.env.VITE_API_URL}/api/users/update`,
         formData,
         {
           headers: {

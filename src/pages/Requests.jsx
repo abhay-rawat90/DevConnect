@@ -10,7 +10,7 @@ const Requests = () => {
 
   const fetchRequests = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/connections/requests", {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/connections/requests`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setRequests(res.data);
@@ -28,7 +28,7 @@ const Requests = () => {
 
   const handleAccept = async (requestId) => {
     try {
-      await axios.put("http://localhost:5000/api/connections/accept",
+      await axios.put(`${import.meta.env.VITE_API_URL}/api/connections/accept`,
         { requestId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -40,7 +40,20 @@ const Requests = () => {
     }
   };
 
-  return (
+  const handleReject = async (requestId) => {
+    try {
+      await axios.put(`${import.meta.env.VITE_API_URL}/api/connections/reject`,
+        { requestId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success("Connection rejected.");
+      fetchRequests(); // Refresh the list
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Could not reject request.");
+    }
+  };
+
+    return (
     <div className="p-4 max-w-lg mx-auto">
       <h2 className="text-2xl font-bold mb-4">Connection Requests</h2>
       {requests.length > 0 ? (
@@ -54,7 +67,10 @@ const Requests = () => {
                 <button onClick={() => handleAccept(req._id)} className="bg-blue-600 text-white px-3 py-1 rounded mr-2 hover:bg-blue-700">
                   Accept
                 </button>
-                {/* We will add a reject handler later */}
+                {/* Add the new Reject button */}
+                <button onClick={() => handleReject(req._id)} className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">
+                  Reject
+                </button>
               </div>
             </div>
           ))}

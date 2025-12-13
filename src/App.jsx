@@ -13,6 +13,8 @@ import EditProfile from "./pages/Edit-Profile";
 import EditSkills from "./pages/Edit-Skills";
 import SearchUsers from "./pages/SearchUsers";
 import Requests from "./pages/Requests";
+import Chat from "./pages/Chat";
+import UserProfile from "./pages/UserProfile";
 
 export default function App() {
   const { loading } = useAuth();
@@ -69,6 +71,18 @@ export default function App() {
       <Route path = "/requests" element={
         <PrivateRoute>
           <Requests />
+        </PrivateRoute>
+      } />
+
+      <Route path = "/chat" element = {
+        <PrivateRoute>
+          <Chat />
+        </PrivateRoute>
+      } />
+
+      <Route path = "/profile/:userId" element = {
+        <PrivateRoute>
+          <UserProfile />
         </PrivateRoute>
       } />
       <Route path="*" element={<NotFound />} />
