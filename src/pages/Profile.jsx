@@ -28,91 +28,170 @@ const Profile = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      updateUser(res.data.user); // Update global user state
-      toast.success(res.data.message);
-      setFile(null); // Clear the file input
+      updateUser(res.data.user);
+      toast.success("BIOMETRIC_UPDATE_COMPLETE");
+      setFile(null);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Upload failed.");
+      toast.error(err.response?.data?.message || "UPLOAD_FAILURE");
     } finally {
       setLoading(false);
     }
   };
 
-  if (!user) return <p>Loading...</p>;
+  if (!user) return (
+    <div className="min-h-screen bg-[#050505] flex items-center justify-center font-mono text-green-500">
+        <p className="animate-pulse">{">"} LOADING_USER_DATA...</p>
+    </div>
+  );
 
-  // A default SVG placeholder for the profile picture
+  // Terminal Placeholder
   const placeholder = (
-    <svg className="h-full w-full text-gray-300" fill="currentColor" viewBox="0 0 24 24">
-      <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
-    </svg>
+    <div className="h-full w-full bg-black flex flex-col items-center justify-center text-green-700 font-mono border border-green-900">
+       <span className="text-4xl opacity-50">?</span>
+       <span className="text-[10px] mt-2">NO_IMAGE_DATA</span>
+    </div>
   );
 
   return (
-    <div className="bg-gray-100 min-h-screen p-4 sm:p-6 lg:p-8">
-      <div className="max-w-xl mx-auto bg-white rounded-xl shadow-md overflow-hidden">
-        <div className="p-8">
-          <div className="flex flex-col items-center">
-            {/* Profile Picture Display */}
-            <div className="relative h-32 w-32 rounded-full ring-4 ring-blue-500 ring-offset-2 overflow-hidden mb-4">
-              {user.profilePicture ? <img src={user.profilePicture} alt="Profile" className="h-full w-full object-cover" /> : placeholder}
+    // MAIN CONTAINER
+    <div className="min-h-[calc(100vh-64px)] bg-[#050505] text-green-500 font-mono flex items-center justify-center p-4 relative overflow-hidden selection:bg-green-500 selection:text-black">
+      
+      {/* BACKGROUND EFFECTS */}
+      <div className="absolute inset-0 pointer-events-none z-0">
+        <div className="absolute inset-0 bg-[length:100%_4px] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%)]"></div>
+        <div className="absolute inset-0 opacity-10" 
+             style={{ backgroundImage: 'linear-gradient(#22c55e 1px, transparent 1px), linear-gradient(90deg, #22c55e 1px, transparent 1px)', backgroundSize: '40px 40px' }}>
+        </div>
+      </div>
+
+      {/* PROFILE CARD */}
+      <div className="w-full max-w-2xl relative z-10 bg-[#0a0a0a] border border-gray-800 shadow-[0_0_30px_rgba(0,0,0,0.8)]">
+        
+        {/* HEADER BAR */}
+        <div className="flex items-center justify-between p-3 border-b border-gray-800 bg-black/50">
+           <h2 className="text-sm font-bold tracking-widest uppercase flex items-center gap-2">
+              <span className="w-2 h-2 bg-green-500"></span>
+              PERSONNEL_FILE: {user.username.toUpperCase()}
+           </h2>
+           <span className="text-[10px] text-gray-600 font-bold tracking-widest">CONFIDENTIAL</span>
+        </div>
+
+        <div className="p-6 md:p-8">
+          <div className="flex flex-col md:flex-row gap-8 items-start">
+            
+            {/* LEFT COLUMN: IMAGE & UPLOAD */}
+            <div className="flex flex-col items-center w-full md:w-auto">
+                {/* Profile Picture Frame */}
+                <div className="relative h-40 w-40 border-2 border-green-500 p-1 bg-black group shadow-[0_0_15px_rgba(34,197,94,0.2)]">
+                    {/* Decorative Corners */}
+                    <div className="absolute top-0 left-0 w-2 h-2 bg-green-500"></div>
+                    <div className="absolute top-0 right-0 w-2 h-2 bg-green-500"></div>
+                    <div className="absolute bottom-0 left-0 w-2 h-2 bg-green-500"></div>
+                    <div className="absolute bottom-0 right-0 w-2 h-2 bg-green-500"></div>
+                    
+                    <div className="h-full w-full overflow-hidden relative">
+                        {user.profilePicture ? <img src={user.profilePicture} alt="Profile" className="h-full w-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" /> : placeholder}
+                        {/* Scanline overlay */}
+                        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,0,0.1)_50%,rgba(0,0,0,0)_50%)] bg-[length:100%_4px] pointer-events-none opacity-50"></div>
+                    </div>
+                </div>
+
+                {/* Upload Control */}
+                <div className="mt-6 w-full max-w-[160px]">
+                    <div className="flex flex-col gap-2">
+                        <input
+                            type="file"
+                            id="file-upload"
+                            onChange={handleFileChange}
+                            className="hidden"
+                            accept="image/*"
+                        />
+                        <label
+                            htmlFor="file-upload"
+                            className="cursor-pointer text-center text-[10px] uppercase tracking-widest py-2 border border-gray-700 hover:border-green-500 hover:text-green-400 hover:bg-green-900/20 transition-all truncate px-2"
+                        >
+                            {file ? file.name : "[ SELECT_IMAGE ]"}
+                        </label>
+                        
+                        {file && (
+                            <button
+                                onClick={handleUpload}
+                                disabled={loading}
+                                className="bg-green-600 text-black text-[10px] font-bold uppercase py-2 hover:bg-white transition-all disabled:opacity-50"
+                            >
+                                {loading ? "UPLOADING..." : "EXECUTE_UPLOAD"}
+                            </button>
+                        )}
+                    </div>
+                </div>
             </div>
 
-            <h1 className="text-2xl font-bold text-gray-900">{user.username}</h1>
-            <p className="text-md text-gray-500">{user.email}</p>
+            {/* RIGHT COLUMN: DETAILS */}
+            <div className="flex-1 w-full">
+                <div className="space-y-6">
+                    {/* User Info Block */}
+                    <div className="border border-gray-800 bg-black/40 p-4 relative">
+                        <h3 className="absolute -top-3 left-3 bg-[#0a0a0a] px-2 text-[10px] text-gray-500 uppercase">Identity_Parameters</h3>
+                        <div className="grid gap-4">
+                            <div>
+                                <p className="text-[10px] text-gray-600 uppercase tracking-widest mb-1">System Handle</p>
+                                <p className="text-xl text-white font-bold tracking-wider">{user.username}</p>
+                            </div>
+                            <div>
+                                <p className="text-[10px] text-gray-600 uppercase tracking-widest mb-1">Comm Protocol</p>
+                                <p className="text-sm text-green-400 font-mono">{user.email}</p>
+                            </div>
+                        </div>
+                    </div>
 
-            {/* Upload Section */}
-            <div className="mt-6 w-full max-w-sm">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Update Profile Picture</label>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="file"
-                  id="file-upload"
-                  onChange={handleFileChange}
-                  className="hidden"
-                  accept="image/*"
-                />
-                <label
-                  htmlFor="file-upload"
-                  className="cursor-pointer bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 flex-grow text-center"
-                >
-                  {file ? file.name : "Choose File"}
-                </label>
-                {file && (
-                  <button
-                    onClick={handleUpload}
-                    disabled={loading}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-blue-300"
-                  >
-                    {loading ? "Uploading..." : "Upload"}
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
+                    {/* Skills Block */}
+                    <div className="border border-gray-800 bg-black/40 p-4 relative min-h-[120px]">
+                        <h3 className="absolute -top-3 left-3 bg-[#0a0a0a] px-2 text-[10px] text-gray-500 uppercase">Installed_Modules (Skills)</h3>
+                        
+                        {user.skills && user.skills.length > 0 ? (
+                            <div className="flex flex-wrap gap-2 mt-2">
+                                {user.skills.map((skill, idx) => (
+                                    <span key={idx} className="bg-green-900/20 text-green-400 border border-green-800 text-xs px-2 py-1 uppercase tracking-wide hover:bg-green-500 hover:text-black hover:border-green-500 transition-colors cursor-default">
+                                        [{skill}]
+                                    </span>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-gray-600 text-xs italic mt-2">{">"} NO_MODULES_DETECTED</p>
+                        )}
+                    </div>
 
-          <div className="mt-8 border-t border-gray-200 pt-6">
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">🛠️ Skills</h3>
-            {user.skills && user.skills.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {user.skills.map((skill, idx) => (
-                  <span key={idx} className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500 italic">No skills added yet.</p>
-            )}
-            <div className="mt-4 flex justify-center space-x-3">
-              <button onClick={() => navigate("/edit-profile")} className="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300">
-                Edit Profile
-              </button>
-              <button onClick={() => navigate("/edit-skills")} className="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300">
-                {user.skills && user.skills.length > 0 ? "Edit Skills" : "Add Skills"}
-              </button>
+                    {/* Action Buttons */}
+                    <div className="flex gap-4 pt-2">
+                        <button 
+                            onClick={() => navigate("/edit-profile")} 
+                            className="flex-1 border border-green-600 text-green-500 text-xs font-bold py-3 uppercase tracking-widest hover:bg-green-600 hover:text-black transition-all"
+                        >
+                            :: Edit_Params
+                        </button>
+                        <button 
+                            onClick={() => navigate("/edit-skills")} 
+                            className="flex-1 border border-gray-600 text-gray-400 text-xs font-bold py-3 uppercase tracking-widest hover:border-green-500 hover:text-green-500 transition-all"
+                        >
+                            :: Config_Modules
+                        </button>
+                    </div>
+
+                </div>
             </div>
+
           </div>
         </div>
+
+        {/* FOOTER DECORATION */}
+        <div className="border-t border-gray-800 bg-black/50 p-2 flex justify-end">
+            <div className="flex gap-1">
+                <div className="w-1 h-1 bg-green-500 rounded-full animate-ping"></div>
+                <div className="w-1 h-1 bg-green-500 rounded-full"></div>
+                <div className="w-1 h-1 bg-green-500 rounded-full"></div>
+            </div>
+        </div>
+
       </div>
     </div>
   );
