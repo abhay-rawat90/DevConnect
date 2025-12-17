@@ -13,24 +13,52 @@ const Chat = () => {
   const socket = useRef();
   const scrollRef = useRef();
 
-  // --- Socket.IO and Data Fetching Effects ---
+  // --- 1. SOCKET CONNECTION & USER REGISTRATION (Runs once on login) ---
   useEffect(() => {
-    socket.current = io(import.meta.env.VITE_API_URL);
-    socket.current.on("getMessage", (data) => {
-      if (data.senderId === currentChat?._id) {
-        setMessages((prev) => [...prev, { sender: data.senderId, content: data.text, createdAt: Date.now() }]);
-      }
-    });
-    socket.current.on("getUsers", (users) => setOnlineUsers(users));
-    return () => socket.current.disconnect();
-  }, [currentChat]);
-
-  useEffect(() => {
+    // Only connect if user exists
     if (user?.id) {
+      socket.current = io(import.meta.env.VITE_API_URL);
+      
+      // Register the user immediately upon connection
       socket.current.emit("addUser", user.id);
+      
+      // Global listener for online users
+      socket.current.on("getUsers", (users) => setOnlineUsers(users));
     }
-  }, [user]);
 
+    // Cleanup: Disconnect when component unmounts or user logs out
+    return () => {
+      if (socket.current) {
+        socket.current.disconnect();
+      }
+    };
+  }, [user]); // Dependency: user (not currentChat)
+
+  // --- 2. MESSAGE LISTENER (Runs when currentChat changes) ---
+  useEffect(() => {
+    // Ensure socket is active
+    if (!socket.current) return;
+
+    const handleIncomingMessage = (data) => {
+      // Only append message if it matches the currently open chat window
+      if (currentChat && data.senderId === currentChat._id) {
+        setMessages((prev) => [
+          ...prev, 
+          { sender: data.senderId, content: data.text, createdAt: Date.now() }
+        ]);
+      }
+    };
+
+    // Attach listener
+    socket.current.on("getMessage", handleIncomingMessage);
+
+    // Detach listener when chat changes to avoid duplicates/stale state
+    return () => {
+      socket.current.off("getMessage", handleIncomingMessage);
+    };
+  }, [currentChat]); // Dependency: currentChat
+
+  // --- 3. DATA FETCHING (Connections) ---
   useEffect(() => {
     const getConnections = async () => {
       try {
@@ -45,6 +73,7 @@ const Chat = () => {
     if (token) getConnections();
   }, [user, token]);
 
+  // --- 4. DATA FETCHING (Messages) ---
   useEffect(() => {
     const getMessages = async () => {
       if (currentChat) {
@@ -61,6 +90,7 @@ const Chat = () => {
     getMessages();
   }, [currentChat, token]);
 
+  // --- Auto-scroll to bottom ---
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -69,12 +99,17 @@ const Chat = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
+    
     const message = {
       senderId: user.id,
       receiverId: currentChat._id,
       text: newMessage,
     };
+
+    // Emit to server
     socket.current.emit("sendMessage", message);
+    
+    // Update local UI immediately
     setMessages([...messages, { sender: user.id, content: newMessage, createdAt: Date.now() }]);
     setNewMessage("");
   };
