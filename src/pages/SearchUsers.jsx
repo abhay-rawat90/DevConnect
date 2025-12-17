@@ -29,11 +29,16 @@ const SearchUsers = () => {
             
             const data = res.data; 
 
-            // --- FIXED FILTER LOGIC ---
-            // We check for both _id and id to ensure we catch the current user regardless of object structure
+            // --- UPDATED FILTER LOGIC ---
+            // 1. Filter out current user
+            // 2. Filter out users who are already in the connections list
             const currentUserId = user._id || user.id;
-            const filteredResults = data.filter(foundUser => foundUser._id !== currentUserId);
-            // --------------------------
+            const filteredResults = data.filter(foundUser => {
+                const isMe = foundUser._id === currentUserId;
+                const isAlreadyConnected = user.connections && user.connections.includes(foundUser._id);
+                return !isMe && !isAlreadyConnected;
+            });
+            // ----------------------------
             
             setResults(filteredResults);
             setHasSearched(true); 
@@ -122,66 +127,55 @@ const SearchUsers = () => {
                     ) : hasSearched && results.length === 0 ? (
                         <div className="text-center py-12 border border-gray-800 border-dashed bg-black/50">
                             <p className="text-red-500 font-bold tracking-widest text-lg">ERROR: NULL_RETURN</p>
-                            <p className="text-gray-600 text-xs mt-2 uppercase">No nodes found with parameter "{skill}".</p>
+                            <p className="text-gray-600 text-xs mt-2 uppercase">No new nodes found with parameter "{skill}".</p>
                         </div>
                     ) : (
-                        results.map((foundUser) => {
-                            // Check connections array safely
-                            const isConnected = user.connections && user.connections.includes(foundUser._id);
-                            
-                            return (
-                                <div key={foundUser._id} className="group bg-[#0a0a0a] border border-gray-800 p-4 hover:border-green-500 transition-all duration-300 relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
-                                    
-                                    <div className="absolute inset-0 bg-green-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                        results.map((foundUser) => (
+                            <div key={foundUser._id} className="group bg-[#0a0a0a] border border-gray-800 p-4 hover:border-green-500 transition-all duration-300 relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                
+                                <div className="absolute inset-0 bg-green-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
 
-                                    <div className="flex items-center gap-4 relative z-10">
-                                        <Link to={`/profile/${foundUser._id}`} className="block relative">
-                                            <div className="h-16 w-16 border border-gray-600 group-hover:border-green-500 bg-black flex items-center justify-center overflow-hidden transition-colors">
-                                                {foundUser.profilePicture ? (
-                                                    <img src={foundUser.profilePicture} alt={foundUser.username} className="h-full w-full object-cover grayscale group-hover:grayscale-0 transition-all" />
-                                                ) : (
-                                                    <span className="text-2xl font-bold text-gray-600">{getInitials(foundUser.username)}</span>
-                                                )}
-                                            </div>
-                                            <div className="absolute -bottom-1 -right-1 w-2 h-2 bg-green-500 border border-black"></div>
+                                <div className="flex items-center gap-4 relative z-10">
+                                    <Link to={`/profile/${foundUser._id}`} className="block relative">
+                                        <div className="h-16 w-16 border border-gray-600 group-hover:border-green-500 bg-black flex items-center justify-center overflow-hidden transition-colors">
+                                            {foundUser.profilePicture ? (
+                                                <img src={foundUser.profilePicture} alt={foundUser.username} className="h-full w-full object-cover grayscale group-hover:grayscale-0 transition-all" />
+                                            ) : (
+                                                <span className="text-2xl font-bold text-gray-600">{getInitials(foundUser.username)}</span>
+                                            )}
+                                        </div>
+                                        <div className="absolute -bottom-1 -right-1 w-2 h-2 bg-green-500 border border-black"></div>
+                                    </Link>
+
+                                    <div>
+                                        <Link to={`/profile/${foundUser._id}`} className="block">
+                                            <h4 className="text-xl font-bold text-white group-hover:text-green-400 transition-colors uppercase tracking-wide">
+                                                {foundUser.username}
+                                            </h4>
                                         </Link>
-
-                                        <div>
-                                            <Link to={`/profile/${foundUser._id}`} className="block">
-                                                <h4 className="text-xl font-bold text-white group-hover:text-green-400 transition-colors uppercase tracking-wide">
-                                                    {foundUser.username}
-                                                </h4>
-                                            </Link>
-                                            <div className="flex flex-wrap gap-2 mt-2">
-                                                {foundUser.skills && foundUser.skills.length > 0 ? foundUser.skills.map((s, i) => (
-                                                    <span key={i} className="text-[10px] bg-gray-900 text-gray-400 px-2 py-1 border border-gray-800 uppercase">
-                                                        {s}
-                                                    </span>
-                                                )) : (
-                                                    <span className="text-[10px] text-gray-600 italic">NO_MODULES</span>
-                                                )}
-                                            </div>
+                                        <div className="flex flex-wrap gap-2 mt-2">
+                                            {foundUser.skills && foundUser.skills.length > 0 ? foundUser.skills.map((s, i) => (
+                                                <span key={i} className="text-[10px] bg-gray-900 text-gray-400 px-2 py-1 border border-gray-800 uppercase">
+                                                    {s}
+                                                </span>
+                                            )) : (
+                                                <span className="text-[10px] text-gray-600 italic">NO_MODULES</span>
+                                            )}
                                         </div>
                                     </div>
-
-                                    <div className="flex items-center gap-3 relative z-10">
-                                        <button 
-                                            onClick={() => handleConnect(foundUser._id)} 
-                                            className="bg-black border border-green-700 text-green-600 hover:bg-green-600 hover:text-black px-4 py-2 text-xs font-bold uppercase tracking-widest transition-all"
-                                        >
-                                            [ INIT_LINK ]
-                                        </button>
-                                        
-                                        {isConnected && (
-                                            <button className="bg-black border border-red-700 text-red-600 hover:bg-red-600 hover:text-white px-4 py-2 text-xs font-bold uppercase tracking-widest transition-all shadow-[0_0_10px_rgba(220,38,38,0.2)]">
-                                                [ PVP_MODE ]
-                                            </button>
-                                        )}
-                                    </div>
-
                                 </div>
-                            );
-                        })
+
+                                <div className="flex items-center gap-3 relative z-10">
+                                    <button 
+                                        onClick={() => handleConnect(foundUser._id)} 
+                                        className="bg-black border border-green-700 text-green-600 hover:bg-green-600 hover:text-black px-4 py-2 text-xs font-bold uppercase tracking-widest transition-all"
+                                    >
+                                        [ INIT_LINK ]
+                                    </button>
+                                </div>
+
+                            </div>
+                        ))
                     )}
                 </div>
             </div>
