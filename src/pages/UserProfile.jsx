@@ -30,7 +30,6 @@ const UserProfile = () => {
     }
   }, [userId, token]);
 
-  // Added logic to make the button functional (similar to SearchUsers)
   const handleConnect = async () => {
     try {
         await axios.post(`${import.meta.env.VITE_API_URL}/api/connections/send`,
@@ -88,7 +87,6 @@ const UserProfile = () => {
             
             {/* Avatar Frame */}
             <div className="relative h-40 w-40 border-2 border-green-500 p-1 bg-black mb-6 group-hover:shadow-[0_0_20px_rgba(34,197,94,0.4)] transition-all">
-                {/* Decorative Corners */}
                 <div className="absolute top-0 left-0 w-2 h-2 bg-green-500"></div>
                 <div className="absolute top-0 right-0 w-2 h-2 bg-green-500"></div>
                 <div className="absolute bottom-0 left-0 w-2 h-2 bg-green-500"></div>
@@ -102,7 +100,6 @@ const UserProfile = () => {
                             {getInitials(profile.username)}
                         </div>
                     )}
-                    {/* Scanline Overlay */}
                     <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,0,0.1)_50%,rgba(0,0,0,0)_50%)] bg-[length:100%_4px] pointer-events-none opacity-50"></div>
                 </div>
             </div>
@@ -113,16 +110,17 @@ const UserProfile = () => {
             </p>
 
             <div className="mt-8 w-full space-y-3">
-                <button 
-                    onClick={handleConnect}
-                    className="w-full bg-green-900/20 border border-green-600 text-green-500 hover:bg-green-500 hover:text-black py-3 text-xs font-bold uppercase tracking-widest transition-all shadow-[0_0_10px_rgba(34,197,94,0.1)] hover:shadow-[0_0_15px_rgba(34,197,94,0.4)]"
-                >
-                    [ INIT_LINK ]
-                </button>
-                {isConnected && (
-                    <button className="w-full border border-red-900 text-red-600 hover:bg-red-600 hover:text-white py-3 text-xs font-bold uppercase tracking-widest transition-all">
-                        [ CHALLENGE ]
+                {!isConnected ? (
+                    <button 
+                        onClick={handleConnect}
+                        className="w-full bg-green-900/20 border border-green-600 text-green-500 hover:bg-green-500 hover:text-black py-3 text-xs font-bold uppercase tracking-widest transition-all shadow-[0_0_10px_rgba(34,197,94,0.1)] hover:shadow-[0_0_15px_rgba(34,197,94,0.4)]"
+                    >
+                        [ INIT_LINK ]
                     </button>
+                ) : (
+                    <div className="w-full border border-gray-800 text-gray-500 py-3 text-xs font-bold uppercase tracking-widest bg-black/50 cursor-not-allowed">
+                        [ LINK_ESTABLISHED ]
+                    </div>
                 )}
             </div>
         </div>
