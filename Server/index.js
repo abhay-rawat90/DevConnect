@@ -62,13 +62,13 @@ io.on("connection", (socket) => {
     io.emit("getUsers", onlineUsers);
     });
 
-    socket.on("sendMessage", async ({ senderId, receiverId, text}) => {
+    socket.on("sendMessage", async ({ senderId, receiverId, text, senderName }) => { 
     const user = getUser(receiverId);
 
     const newMessage = new Message({
-    sender: senderId,
-    recipient: receiverId,
-    content: text,
+        sender: senderId,
+        recipient: receiverId,
+        content: text,
     });
     await newMessage.save();
 
@@ -76,9 +76,10 @@ io.on("connection", (socket) => {
         io.to(user.socketId).emit("getMessage", {
             senderId,
             text,
+            senderName, 
         });
     }
-    });
+});
 
     socket.on("disconnect", () => {
     console.log(`User disconnected: ${socket.id}`);
