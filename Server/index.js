@@ -43,9 +43,13 @@ app.get('/', async (req, res) => {
 let onlineUsers = [];
 
 const addUser = (userId, socketId) => {
-    !onlineUsers.some(user => user.userId === userId) && 
-    onlineUsers.push({userId, socketId});
-};
+    const existingUser = onlineUsers.find(user => user.userId === userId);
+    if (existingUser) {
+        existingUser.socketId = socketId; // Update existing session
+    } else {
+        onlineUsers.push({ userId, socketId }); // Add new session
+    }
+}
 
 const removeUser = (socketId) => {
     return onlineUsers.filter(user => user.socketId !== socketId);
@@ -62,23 +66,24 @@ io.on("connection", (socket) => {
     io.emit("getUsers", onlineUsers);
     });
 
-    socket.on("sendMessage", async ({ senderId, receiverId, text}) => {
+    socket.on("sendMessage", async ({ senderId, receiverId, text, senderName }) => {
     const user = getUser(receiverId);
 
     const newMessage = new Message({
-    sender: senderId,
-    recipient: receiverId,
-    content: text,
+        sender: senderId,
+        recipient: receiverId,
+        content: text,
     });
     await newMessage.save();
 
-    if(user) {
+    if (user) {
         io.to(user.socketId).emit("getMessage", {
             senderId,
             text,
+            senderName, // Pass this to the frontend
         });
     }
-    });
+});
 
     socket.on("disconnect", () => {
     console.log(`User disconnected: ${socket.id}`);
