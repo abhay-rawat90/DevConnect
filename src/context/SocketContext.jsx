@@ -15,10 +15,12 @@ export const SocketProvider = ({ children }) => {
   const location = useLocation(); 
 
   useEffect(() => {
-    if (user?.id) {
+
+    const userId = user?.id || user?._id;
+    if (userId) {
       // Connect to Socket
       socket.current = io(import.meta.env.VITE_API_URL);
-      socket.current.emit("addUser", user.id);
+      socket.current.emit("addUser", userId);
       socket.current.on("getUsers", (users) => setOnlineUsers(users));
 
       // Global Notification Listener

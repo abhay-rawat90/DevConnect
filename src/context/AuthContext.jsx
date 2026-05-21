@@ -40,6 +40,9 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem("auth-user", JSON.stringify(res.data));
         } catch (err) {
             console.log("Failed to Fetch User Data ", err);
+            if (err.response && err.response.status === 401) {
+                logout();
+            }
         }
     };
 

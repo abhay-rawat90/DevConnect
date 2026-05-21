@@ -71,16 +71,18 @@ const Chat = () => {
     e.preventDefault();
     if (!newMessage.trim()) return;
     
+    const userId = user?.id || user?._id; // Get robust ID
+
     const messagePayload = {
-      senderId: user.id,
+      senderId: userId,
       receiverId: currentChat._id,
       text: newMessage,
-      senderName: user.name || user.username // Add this for notification
+      senderName: user.name || user.username 
     };
 
     socket.current.emit("sendMessage", messagePayload);
     
-    setMessages([...messages, { sender: user.id, content: newMessage, createdAt: Date.now() }]);
+    setMessages([...messages, { sender: userId, content: newMessage, createdAt: Date.now() }]);
     setNewMessage("");
   };
 
@@ -152,9 +154,10 @@ const Chat = () => {
 
             <div className="flex-1 p-4 overflow-y-auto space-y-6 scrollbar-thin scrollbar-thumb-green-900 scrollbar-track-black">
               {messages.map((m, index) => {
-                const isMe = m.sender === user.id;
+                const userId = user?.id || user?._id; 
+                const isMe = m.sender === userId; 
                 return (
-                  <div key={index} className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}>
+                    <div key={index} className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}>
                     <div className="flex items-center gap-2 mb-1 text-[10px] text-gray-500 font-mono">
                          {isMe ? "YOU" : currentChat.username.toUpperCase()} :: {formatTimestamp(m.createdAt)}
                     </div>
