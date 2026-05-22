@@ -10,72 +10,65 @@ const Navbar = () => {
   const isActive = (path) => location.pathname === path;
 
   const placeholder = (
-    <div className="h-full w-full bg-gray-900 flex items-center justify-center text-green-700 text-xs font-mono border border-green-900">
-      ERR_IMG
+    <div className="h-full w-full bg-[#0a0a0a] flex items-center justify-center text-gray-500 text-xs font-medium">
+      ?
     </div>
   );
 
   return (
-    <nav className="bg-[#050505] border-b border-gray-800 text-green-500 font-mono sticky top-0 z-50">
-      
-      {/* SCANLINE OVERLAY */}
-      <div className="absolute inset-0 pointer-events-none bg-[length:100%_4px] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%)]"></div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16 items-center relative z-10">
+    <nav className="bg-[#050505]/95 backdrop-blur-sm border-b border-gray-900 sticky top-0 z-50 font-sans">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16 items-center">
           
           {/* LOGO AREA */}
           <div className="flex-shrink-0 flex items-center">
-            <Link to="/" className="text-xl sm:text-2xl font-black tracking-tighter text-white hover:text-green-400 transition-colors">
-              DEV<span className="text-green-500">_CONNECT</span>
-              <span className="animate-pulse">_</span>
+            <Link to="/" className="text-xl sm:text-2xl font-bold text-white tracking-tight hover:opacity-80 transition-opacity">
+              Dev<span className="text-green-500">Connect</span>
             </Link>
           </div>
 
           {/* DESKTOP LINKS */}
-          <div className="hidden md:flex items-center space-x-1">
-            {/* HOME is always visible */}
-            <NavLink to="/" active={isActive("/")}>/HOME</NavLink>
+          <div className="hidden md:flex items-center space-x-6">
+            <NavLink to="/" active={isActive("/")}>Home</NavLink>
             
             {user ? (
-              // LOGGED IN VIEW
               <>
-                <NavLink to="/dashboard" active={isActive("/dashboard")}>/DASHBOARD</NavLink>
+                <NavLink to="/dashboard" active={isActive("/dashboard")}>Dashboard</NavLink>
+                <NavLink to="/search" active={isActive("/search")}>Find Devs</NavLink>
+                <NavLink to="/requests" active={isActive("/requests")}>Requests</NavLink>
+                <NavLink to="/chat" active={isActive("/chat")}>Chat</NavLink>
+                
                 <div className="h-4 w-px bg-gray-800 mx-2"></div>
-                <NavLink to="/search" active={isActive("/search")}>/SEARCH</NavLink>
-                <NavLink to="/requests" active={isActive("/requests")}>/REQS</NavLink>
-                <NavLink to="/chat" active={isActive("/chat")}>/CHAT</NavLink>
                 
                 {/* PROFILE & LOGOUT */}
-                <div className="ml-4 flex items-center gap-4">
-                  <button 
-                    onClick={logout} 
-                    className="text-xs text-red-500 hover:bg-red-500 hover:text-black px-2 py-1 border border-red-900 hover:border-red-500 transition-all uppercase"
-                  >
-                    [ DISCONNECT ]
-                  </button>
-                  
+                <div className="flex items-center gap-5 ml-2">
                   <Link 
                     to="/profile" 
-                    className="h-9 w-9 border border-green-500 bg-gray-900 hover:shadow-[0_0_10px_rgba(34,197,94,0.5)] transition-all overflow-hidden"
+                    className="h-8 w-8 rounded-full border border-gray-700 bg-[#0a0a0a] hover:border-green-500 transition-colors overflow-hidden"
                   >
                     {user.profilePicture ? (
-                      <img src={user.profilePicture} alt="Profile" className="h-full w-full object-cover grayscale hover:grayscale-0 transition-all" />
+                      <img src={user.profilePicture} alt="Profile" className="h-full w-full object-cover" />
                     ) : (
                       placeholder
                     )}
                   </Link>
+                  
+                  <button 
+                    onClick={logout} 
+                    className="text-sm font-medium text-gray-400 hover:text-red-400 transition-colors"
+                  >
+                    Log Out
+                  </button>
                 </div>
               </>
             ) : (
-              // LOGGED OUT VIEW
               <>
                 <div className="h-4 w-px bg-gray-800 mx-2"></div>
-                <Link to="/login" className="px-4 py-1 text-sm font-bold bg-green-600 text-black hover:bg-white transition-colors uppercase">
-                  :: Login
+                <Link to="/login" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">
+                  Log In
                 </Link>
-                <Link to="/register" className="px-4 py-1 text-sm text-green-500 border border-green-500 hover:bg-green-500 hover:text-black transition-all uppercase">
-                  Register
+                <Link to="/register" className="px-4 py-2 text-sm font-bold bg-green-600 text-black rounded hover:bg-green-500 transition-colors">
+                  Create Account
                 </Link>
               </>
             )}
@@ -85,16 +78,16 @@ const Navbar = () => {
           <div className="flex items-center md:hidden">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-green-500 hover:text-white focus:outline-none p-2 border border-transparent hover:border-gray-700"
+              className="text-gray-400 hover:text-white focus:outline-none p-2"
             >
               <span className="sr-only">Open main menu</span>
               {isOpen ? (
                 <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               ) : (
                 <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               )}
             </button>
@@ -104,33 +97,32 @@ const Navbar = () => {
 
       {/* MOBILE MENU (Collapsible) */}
       {isOpen && (
-        <div className="md:hidden border-t border-gray-800 bg-[#0a0a0a]">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            <MobileNavLink to="/" onClick={() => setIsOpen(false)}>_HOME_DIR</MobileNavLink>
+        <div className="md:hidden border-t border-gray-900 bg-[#0a0a0a]">
+          <div className="px-4 pt-2 pb-4 space-y-1 shadow-2xl">
+            <MobileNavLink to="/" active={isActive("/")} onClick={() => setIsOpen(false)}>Home</MobileNavLink>
             
             {user ? (
-              // LOGGED IN MOBILE ITEMS
               <>
-                <MobileNavLink to="/dashboard" onClick={() => setIsOpen(false)}>_DASHBOARD</MobileNavLink>
-                <MobileNavLink to="/search" onClick={() => setIsOpen(false)}>_SEARCH_DB</MobileNavLink>
-                <MobileNavLink to="/requests" onClick={() => setIsOpen(false)}>_INCOMING_REQS</MobileNavLink>
-                <MobileNavLink to="/chat" onClick={() => setIsOpen(false)}>_COMM_CHANNEL</MobileNavLink>
-                <MobileNavLink to="/profile" onClick={() => setIsOpen(false)}>_USER_PROFILE</MobileNavLink>
+                <MobileNavLink to="/dashboard" active={isActive("/dashboard")} onClick={() => setIsOpen(false)}>Dashboard</MobileNavLink>
+                <MobileNavLink to="/search" active={isActive("/search")} onClick={() => setIsOpen(false)}>Find Devs</MobileNavLink>
+                <MobileNavLink to="/requests" active={isActive("/requests")} onClick={() => setIsOpen(false)}>Requests</MobileNavLink>
+                <MobileNavLink to="/chat" active={isActive("/chat")} onClick={() => setIsOpen(false)}>Chat</MobileNavLink>
+                <MobileNavLink to="/profile" active={isActive("/profile")} onClick={() => setIsOpen(false)}>Profile</MobileNavLink>
+                
                 <button 
                   onClick={() => { logout(); setIsOpen(false); }} 
-                  className="block w-full text-left px-3 py-2 text-red-500 hover:bg-red-900/20 hover:text-red-400 border-l-2 border-transparent hover:border-red-500 transition-all font-mono"
+                  className="block w-full text-left px-3 py-3 text-base font-medium text-red-400 hover:bg-[#111] rounded-md transition-colors mt-2"
                 >
-                  ! SYSTEM_LOGOUT
+                  Log Out
                 </button>
               </>
             ) : (
-              // LOGGED OUT MOBILE ITEMS
-              <div className="grid grid-cols-2 gap-2 mt-4 border-t border-gray-800 pt-4">
-                <Link to="/login" onClick={() => setIsOpen(false)} className="text-center py-2 bg-green-600 text-black font-bold uppercase hover:bg-white">
-                  Login
+              <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-gray-800">
+                <Link to="/login" onClick={() => setIsOpen(false)} className="text-center py-3 text-sm font-medium text-gray-300 bg-[#111] rounded hover:bg-gray-800 transition-colors">
+                  Log In
                 </Link>
-                <Link to="/register" onClick={() => setIsOpen(false)} className="text-center py-2 border border-green-500 text-green-500 uppercase hover:bg-green-500 hover:text-black">
-                  Register
+                <Link to="/register" onClick={() => setIsOpen(false)} className="text-center py-3 text-sm font-bold bg-green-600 text-black rounded hover:bg-green-500 transition-colors">
+                  Create Account
                 </Link>
               </div>
             )}
@@ -146,21 +138,19 @@ const Navbar = () => {
 const NavLink = ({ to, children, active }) => (
   <Link
     to={to}
-    className={`px-3 py-2 text-sm font-medium transition-colors uppercase tracking-wide
-      ${active 
-        ? "bg-green-500/10 text-green-400 border-b-2 border-green-500" 
-        : "text-gray-400 hover:text-green-500 hover:bg-gray-900"
-      }`}
+    className={`text-sm font-medium transition-colors hover:text-green-400
+      ${active ? "text-green-500" : "text-gray-400"}`}
   >
     {children}
   </Link>
 );
 
-const MobileNavLink = ({ to, children, onClick }) => (
+const MobileNavLink = ({ to, children, onClick, active }) => (
   <Link
     to={to}
     onClick={onClick}
-    className="block px-3 py-3 text-base font-medium text-gray-400 hover:text-green-400 hover:bg-gray-900 border-l-2 border-transparent hover:border-green-500 transition-all uppercase"
+    className={`block px-3 py-3 text-base font-medium rounded-md transition-colors
+      ${active ? "bg-green-500/10 text-green-400" : "text-gray-400 hover:bg-[#111] hover:text-white"}`}
   >
     {children}
   </Link>

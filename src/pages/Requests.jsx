@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
@@ -16,7 +17,7 @@ const Requests = () => {
       setRequests(res.data);
     } catch (err) {
       console.error(err);
-      toast.error("SIGNAL_INTERRUPTED: Could not fetch data.");
+      toast.error("Could not fetch connection requests.");
     } finally {
       setLoading(false);
     }
@@ -29,133 +30,129 @@ const Requests = () => {
   }, [token]);
 
   const handleAccept = async (requestId) => {
+    // Optimistic UI update: Remove the request instantly for a snappy feel
+    setRequests(currentRequests => currentRequests.filter(req => req._id !== requestId));
+    
     try {
       await axios.put(`${import.meta.env.VITE_API_URL}/api/connections/accept`,
         { requestId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      toast.success("LINK_ESTABLISHED");
-      fetchRequests();
+      toast.success("Connection accepted!");
     } catch (err) {
-      toast.error(err.response?.data?.message || "HANDSHAKE_FAILED");
+      // Re-fetch if it fails to revert the optimistic update
+      fetchRequests();
+      toast.error(err.response?.data?.message || "Failed to accept request.");
     }
   };
 
   const handleReject = async (requestId) => {
+    // Optimistic UI update
+    setRequests(currentRequests => currentRequests.filter(req => req._id !== requestId));
+
     try {
       await axios.put(`${import.meta.env.VITE_API_URL}/api/connections/reject`,
         { requestId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      toast.success("SIGNAL_BLOCKED");
-      fetchRequests(); 
+      toast.success("Request declined.");
     } catch (err) {
-      toast.error(err.response?.data?.message || "OP_FAILED");
+      fetchRequests();
+      toast.error(err.response?.data?.message || "Failed to decline request.");
     }
   };
 
-  // Helper for placeholder avatar
   const getInitials = (name = 'U') => name.charAt(0).toUpperCase();
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-[#050505] text-green-500 font-mono flex flex-col items-center p-4 sm:p-8 relative overflow-hidden selection:bg-green-500 selection:text-black">
+    <div className="min-h-[calc(100vh-64px)] bg-[#050505] text-gray-200 font-sans flex flex-col items-center p-4 sm:p-8 relative overflow-hidden selection:bg-green-500 selection:text-black">
       
-      {/* BACKGROUND EFFECTS */}
-      <div className="absolute inset-0 pointer-events-none z-0">
-        <div className="absolute inset-0 bg-[length:100%_4px] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%)]"></div>
-        <div className="absolute inset-0 opacity-10" 
-             style={{ backgroundImage: 'linear-gradient(#22c55e 1px, transparent 1px), linear-gradient(90deg, #22c55e 1px, transparent 1px)', backgroundSize: '40px 40px' }}>
-        </div>
-      </div>
+      {/* MINIMALIST GRID BACKGROUND */}
+      <div className="absolute inset-0 pointer-events-none z-0 bg-[linear-gradient(rgba(34,197,94,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(34,197,94,0.03)_1px,transparent_1px)] bg-[size:64px_64px]"></div>
 
-      <div className="w-full max-w-3xl relative z-10">
+      <div className="w-full max-w-4xl relative z-10 mt-4">
         
         {/* HEADER */}
-        <div className="mb-8 border-b border-gray-800 pb-4 flex items-center justify-between">
+        <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-gray-800 pb-6">
             <div>
-                <h2 className="text-xl md:text-2xl font-black tracking-tighter text-white">
-                    INCOMING_<span className="text-green-500">TRANSMISSIONS</span>
+                <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight">
+                    Connection Requests
                 </h2>
-                <p className="text-xs text-gray-500 mt-1 uppercase tracking-widest">
-                    :: PENDING_HANDSHAKES: <span className="text-white">{requests.length}</span>
+                <p className="text-gray-400 mt-2">
+                    Review and manage your pending network invitations.
                 </p>
             </div>
-            {/* Blinking Status Light */}
-            <div className={`w-3 h-3 rounded-full ${requests.length > 0 ? 'bg-yellow-500 animate-pulse shadow-[0_0_10px_rgba(234,179,8,0.5)]' : 'bg-gray-800'}`}></div>
+            {requests.length > 0 && (
+                <div className="flex items-center gap-2 bg-[#111] border border-gray-800 px-4 py-2 rounded-full self-start md:self-auto">
+                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                    <span className="text-sm font-medium text-gray-300">{requests.length} Pending</span>
+                </div>
+            )}
         </div>
 
         {/* CONTENT */}
         {loading ? (
-            <div className="text-center py-20 opacity-50">
-                <p className="animate-pulse">{">"} SCANNING_FREQUENCIES...</p>
+            <div className="text-center py-20 bg-[#0a0a0a] border border-gray-800 rounded-2xl">
+                 <div className="inline-block w-8 h-8 border-4 border-gray-700 border-t-green-500 rounded-full animate-spin mb-4"></div>
+                 <p className="text-gray-400 font-medium">Checking for requests...</p>
             </div>
         ) : requests.length > 0 ? (
           <div className="space-y-4">
             {requests.map((req) => (
-              <div key={req._id} className="bg-[#0a0a0a] border border-gray-800 p-6 rounded-sm shadow-lg hover:border-green-500/50 transition-all duration-300 group relative overflow-hidden">
+              <div key={req._id} className="bg-[#0a0a0a] border border-gray-800 p-5 md:p-6 rounded-2xl shadow-lg hover:border-gray-700 transition-all flex flex-col sm:flex-row justify-between items-center gap-6">
                 
-                {/* Decorative Corner */}
-                <div className="absolute top-0 right-0 w-8 h-8 bg-green-900/10 -mr-4 -mt-4 rotate-45 border border-green-900"></div>
+                {/* USER INFO */}
+                <div className="flex items-center gap-5 w-full sm:w-auto">
+                  <Link to={`/profile/${req.requester._id}`} className="block flex-shrink-0">
+                      <div className="h-16 w-16 rounded-full border border-gray-700 bg-[#111] flex items-center justify-center overflow-hidden">
+                          {req.requester.profilePicture ? (
+                              <img src={req.requester.profilePicture} alt="User" className="h-full w-full object-cover" />
+                          ) : (
+                              <span className="text-xl font-bold text-gray-500">{getInitials(req.requester.name || req.requester.username)}</span>
+                          )}
+                      </div>
+                  </Link>
 
-                <div className="flex flex-col sm:flex-row justify-between items-center gap-6">
-                  
-                  {/* USER INFO */}
-                  <div className="flex items-center gap-4 w-full sm:w-auto">
-                    {/* Avatar */}
-                    <div className="h-14 w-14 border border-green-500/50 p-1 bg-black flex-shrink-0">
-                        <div className="h-full w-full bg-gray-900 flex items-center justify-center font-bold text-lg text-gray-500 overflow-hidden">
-                             {req.requester.profilePicture ? (
-                                <img src={req.requester.profilePicture} alt="User" className="h-full w-full object-cover grayscale group-hover:grayscale-0 transition-all" />
-                             ) : (
-                                getInitials(req.requester.username)
-                             )}
-                        </div>
-                    </div>
-
-                    {/* Text Details */}
-                    <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Source ID</p>
-                        <h3 className="text-lg font-bold text-white tracking-wide uppercase group-hover:text-green-400 transition-colors">
-                            {req.requester.username}
-                        </h3>
-                        <p className="text-[10px] text-green-600 font-mono mt-1">
-                            {">"} REQUESTING_ACCESS_PERMISSION
-                        </p>
-                    </div>
-                  </div>
-
-                  {/* ACTION BUTTONS */}
-                  <div className="flex w-full sm:w-auto gap-3">
-                    <button 
-                        onClick={() => handleAccept(req._id)} 
-                        className="flex-1 sm:flex-none bg-green-900/20 border border-green-600 text-green-500 hover:bg-green-500 hover:text-black px-4 py-2 text-xs font-bold uppercase tracking-widest transition-all shadow-[0_0_10px_rgba(34,197,94,0.1)] hover:shadow-[0_0_15px_rgba(34,197,94,0.4)]"
-                    >
-                      [ ESTABLISH_LINK ]
-                    </button>
-                    
-                    <button 
-                        onClick={() => handleReject(req._id)} 
-                        className="flex-1 sm:flex-none border border-red-900 text-red-700 hover:border-red-500 hover:text-red-500 px-4 py-2 text-xs font-bold uppercase tracking-widest transition-all"
-                    >
-                      [ BLOCK ]
-                    </button>
+                  <div>
+                      <Link to={`/profile/${req.requester._id}`} className="block group">
+                          <h3 className="text-lg font-bold text-gray-200 group-hover:text-green-400 transition-colors">
+                              {req.requester.name || req.requester.username}
+                          </h3>
+                          <p className="text-sm text-gray-500">@{req.requester.username}</p>
+                      </Link>
                   </div>
                 </div>
+
+                {/* ACTION BUTTONS */}
+                <div className="flex w-full sm:w-auto gap-3 pt-4 sm:pt-0 border-t border-gray-800 sm:border-none">
+                  <button 
+                      onClick={() => handleAccept(req._id)} 
+                      className="flex-1 sm:flex-none bg-green-600 text-black px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-green-500 transition-colors shadow-lg shadow-green-900/20"
+                  >
+                    Accept
+                  </button>
+                  
+                  <button 
+                      onClick={() => handleReject(req._id)} 
+                      className="flex-1 sm:flex-none bg-transparent border border-gray-700 text-gray-400 px-6 py-2.5 rounded-lg text-sm font-semibold hover:border-red-500 hover:text-red-500 transition-colors"
+                  >
+                    Decline
+                  </button>
+                </div>
+                
               </div>
             ))}
           </div>
         ) : (
           /* EMPTY STATE */
-          <div className="flex flex-col items-center justify-center py-20 border border-gray-800 border-dashed bg-[#0a0a0a]/50">
-            <div className="relative mb-4">
-                <div className="w-16 h-16 border-2 border-gray-700 rounded-full flex items-center justify-center">
-                    <div className="w-1 h-1 bg-green-500 rounded-full"></div>
-                </div>
-                {/* Radar Sweep Animation */}
-                <div className="absolute inset-0 border-t-2 border-green-500 rounded-full animate-spin opacity-50"></div>
+          <div className="flex flex-col items-center justify-center py-24 border border-gray-800 border-dashed rounded-2xl bg-[#0a0a0a]/50">
+            <div className="w-16 h-16 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-5 border border-gray-800">
+                <svg className="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
             </div>
-            <p className="text-gray-500 text-sm tracking-widest font-bold">NO_INCOMING_SIGNALS</p>
-            <p className="text-gray-700 text-xs mt-2 uppercase">System Idle. Waiting for packets.</p>
+            <h3 className="text-xl font-bold text-gray-200 mb-2">No pending requests</h3>
+            <p className="text-gray-500 text-center max-w-sm">
+                You're all caught up. When developers want to connect with you, their requests will appear here.
+            </p>
           </div>
         )}
       </div>

@@ -1,11 +1,34 @@
-import { useState } from "react";
-import { Link } from "react-router-dom"; // Added Link import
-import Input from "../components/input";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+import toast from "react-hot-toast";
 
 const Register = () => {
   const [form, setForm] = useState({ name: "", username: "", email: "", password: "" });
-  const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const [logs, setLogs] = useState([
+    "System.init(NewUser)...",
+    "Allocating database space...",
+  ]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLogs((prev) => {
+        if (prev.length > 8) return prev.slice(1);
+        const newLogs = [
+          "Generating secure hash protocols...",
+          "Checking global directory...",
+          "Modules ready: [Profile, Chat, Connect]",
+          "Awaiting user registration data...",
+          "Connection stable.",
+        ];
+        return [...prev, newLogs[Math.floor(Math.random() * newLogs.length)]];
+      });
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -14,135 +37,147 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setMsg(""); 
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        setMsg("SUCCESS: Entity registered in database.");
-        setForm({ name: "", username: "", email: "", password: "" });
-      } else {
-        setMsg(`ERROR: ${data.message || "Registration sequence failed."}`);
-      }
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`, form);
+      
+      toast.success("Account created successfully! Please log in.");
+      setForm({ name: "", username: "", email: "", password: "" });
+      
+      setTimeout(() => navigate("/login"), 1500);
+      
     } catch (err) {
-      setMsg("CRITICAL_FAILURE: Cannot connect to mainframe.");
+      toast.error(err.response?.data?.message || "Registration failed. Please try again.");
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 
-  const isSuccess = msg.includes("SUCCESS");
-
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-[#050505] text-green-500 font-mono flex items-center justify-center p-4 relative overflow-hidden selection:bg-green-500 selection:text-black">
+    <div className="min-h-[calc(100vh-64px)] bg-[#050505] font-sans flex relative overflow-hidden selection:bg-green-500 selection:text-black">
       
-      {/* BACKGROUND EFFECTS */}
-      <div className="absolute inset-0 pointer-events-none z-0">
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_4px,3px_100%]"></div>
-          <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px)', backgroundSize: '30px 30px' }}></div>
-      </div>
+      <div className="absolute inset-0 pointer-events-none z-0 bg-[linear-gradient(rgba(34,197,94,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(34,197,94,0.03)_1px,transparent_1px)] bg-[size:64px_64px]"></div>
 
-      <div className="w-full max-w-lg relative z-10 bg-[#0a0a0a] border border-gray-800 p-8 sm:p-10 rounded-lg shadow-[0_0_30px_rgba(0,0,0,0.8)]">
+      <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 sm:px-16 md:px-24 z-10 bg-[#050505] py-12 overflow-y-auto">
         
-        {/* Decorative Corner Brackets */}
-        <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-green-500"></div>
-        <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-green-500"></div>
-        <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-green-500"></div>
-        <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-green-500"></div>
-
-        <div className="mb-8 text-center">
-          <h2 className="text-3xl font-black tracking-tighter text-white animate-pulse">
-            NEW_<span className="text-green-500">USER</span>
-          </h2>
-          <p className="text-gray-500 mt-2 text-xs tracking-widest uppercase">
-            :: Initialize Registration Sequence ::
+        <div className="mb-8 max-w-md w-full mx-auto lg:mx-0">
+          <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight mb-2">
+            Create an Account
+          </h1>
+          <p className="text-gray-400 text-sm">
+            Join the DevConnect network to chat, share skills, and discover other developers.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="border-b border-gray-800 focus-within:border-green-500 transition-colors duration-300 pb-1">
-              <Input 
-                  label="FULL NAME" 
-                  name="name" 
-                  value={form.name} 
-                  onChange={handleChange}
-                  className="w-full bg-transparent text-gray-300 focus:outline-none placeholder-gray-700 font-mono"
-                  placeholder="ENTER_IDENTIFIER"
-              />
-          </div>
-
-          <div className="border-b border-gray-800 focus-within:border-green-500 transition-colors duration-300 pb-1">
-            <Input 
-                label="USERNAME" 
-                name="username" 
-                value={form.username} 
-                onChange={handleChange} 
-                className="w-full bg-transparent text-gray-300 focus:outline-none placeholder-gray-700 font-mono"
-                placeholder="SET_HANDLE"
+        <form onSubmit={handleSubmit} className="w-full max-w-md mx-auto lg:mx-0 space-y-5">
+          
+          <div>
+            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+              Full Name
+            </label>
+            <input 
+              name="name" 
+              value={form.name} 
+              onChange={handleChange}
+              className="w-full bg-[#0a0a0a] border border-gray-800 text-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all placeholder-gray-600"
+              placeholder="e.g. Jane Doe"
+              required
             />
           </div>
 
-          <div className="border-b border-gray-800 focus-within:border-green-500 transition-colors duration-300 pb-1">
-            <Input 
-                label="EMAIL ADDRESS" 
-                name="email" 
-                type="email" 
-                value={form.email} 
-                onChange={handleChange} 
-                className="w-full bg-transparent text-gray-300 focus:outline-none placeholder-gray-700 font-mono"
-                placeholder="CONTACT_PROTOCOL"
+          <div>
+            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+              Username
+            </label>
+            <input 
+              name="username" 
+              value={form.username} 
+              onChange={handleChange} 
+              className="w-full bg-[#0a0a0a] border border-gray-800 text-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all placeholder-gray-600"
+              placeholder="johndoe99"
+              required
             />
           </div>
 
-          <div className="border-b border-gray-800 focus-within:border-green-500 transition-colors duration-300 pb-1">
-            <Input 
-                label="PASSWORD" 
-                name="password" 
-                type="password" 
-                value={form.password} 
-                onChange={handleChange} 
-                className="w-full bg-transparent text-gray-300 focus:outline-none placeholder-gray-700 font-mono"
-                placeholder="SET_ACCESS_KEY"
+          <div>
+            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+              Email Address
+            </label>
+            <input 
+              name="email" 
+              type="email" 
+              value={form.email} 
+              onChange={handleChange} 
+              className="w-full bg-[#0a0a0a] border border-gray-800 text-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all placeholder-gray-600"
+              placeholder="name@example.com"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+              Password
+            </label>
+            <input 
+              name="password" 
+              type="password" 
+              value={form.password} 
+              onChange={handleChange} 
+              className="w-full bg-[#0a0a0a] border border-gray-800 text-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all placeholder-gray-600 font-mono"
+              placeholder="••••••••"
+              required
             />
           </div>
 
           <button
-            className={`w-full py-3 px-6 mt-6 border border-green-500 text-green-500 font-bold tracking-widest uppercase hover:bg-green-500 hover:text-black transition-all duration-300 shadow-[0_0_10px_rgba(34,197,94,0.3)] hover:shadow-[0_0_20px_rgba(34,197,94,0.6)] relative overflow-hidden group ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
             type="submit"
             disabled={loading}
+            className={`
+              w-full py-3 mt-4 bg-green-600 text-black font-bold rounded-lg hover:bg-green-500 transition-colors shadow-lg shadow-green-900/20
+              ${loading ? "opacity-70 cursor-wait" : ""}
+            `}
           >
-             <span className="relative z-10">
-                 {loading ? "PROCESSING..." : ":: EXECUTE_REGISTRATION()"}
-            </span>
+             {loading ? "Creating Account..." : "Sign Up"}
           </button>
         </form>
 
-        {msg && (
-          <div className={`mt-6 p-4 border-l-4 font-mono text-sm bg-[#050505] ${isSuccess ? "border-green-500 text-green-400" : "border-red-500 text-red-400"}`}>
-            <p className="font-bold leading-relaxed">
-                <span className="animate-pulse">{">"}</span> SYSTEM_LOG: 
-                {msg}
-            </p>
-          </div>
-        )}
-
-        {/* LOGIN LINK SECTION */}
-        <div className="mt-8 pt-6 border-t border-gray-800 text-center">
+        <div className="w-full max-w-md mx-auto lg:mx-0 mt-8 pt-6 border-t border-gray-900 text-center lg:text-left">
             <p className="text-gray-500 text-sm">
-                ALREADY_HAS_ACCESS?{' '}
-                <Link to="/login" className="text-green-500 font-bold hover:text-white hover:underline decoration-green-500 underline-offset-4 transition-all uppercase">
-                    :: Login_Here
+                Already have an account?{' '}
+                <Link to="/login" className="text-green-500 font-semibold hover:text-green-400 transition-colors">
+                    Log in
                 </Link>
             </p>
         </div>
 
       </div>
+
+      <div className="hidden lg:flex w-1/2 bg-[#080808] border-l border-gray-900 items-center justify-center relative z-10">
+        <div className="w-full max-w-lg p-8">
+          
+          <div className="bg-[#050505] rounded-xl border border-gray-800 shadow-2xl overflow-hidden">
+            <div className="bg-[#0a0a0a] border-b border-gray-800 px-4 py-3 flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-gray-700 hover:bg-red-500 transition-colors"></div>
+              <div className="w-3 h-3 rounded-full bg-gray-700 hover:bg-yellow-500 transition-colors"></div>
+              <div className="w-3 h-3 rounded-full bg-gray-700 hover:bg-green-500 transition-colors"></div>
+              <div className="ml-4 flex-1 text-center text-xs font-mono text-gray-500 tracking-wide select-none">
+                register_node.log
+              </div>
+            </div>
+            
+            <div className="p-6 font-mono text-sm space-y-2 h-[300px] text-gray-400 flex flex-col justify-end">
+              {logs.map((log, index) => (
+                <p key={index} className="opacity-90">
+                  <span className="text-green-500 mr-2">{">"}</span> {log}
+                </p>
+              ))}
+              <p className="text-green-500 animate-pulse mt-1">_</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
     </div>
   );
 };

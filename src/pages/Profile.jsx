@@ -29,76 +29,51 @@ const Profile = () => {
         },
       });
       updateUser(res.data.user);
-      toast.success("BIOMETRIC_UPDATE_COMPLETE");
+      toast.success("Profile picture updated successfully!");
       setFile(null);
     } catch (err) {
-      toast.error(err.response?.data?.message || "UPLOAD_FAILURE");
+      toast.error(err.response?.data?.message || "Upload failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   if (!user) return (
-    <div className="min-h-screen bg-[#050505] flex items-center justify-center font-mono text-green-500">
-        <p className="animate-pulse">{">"} LOADING_USER_DATA...</p>
+    <div className="min-h-[calc(100vh-64px)] bg-[#050505] flex items-center justify-center font-sans text-gray-500">
+        <p className="animate-pulse">Loading profile...</p>
     </div>
   );
 
-  // Terminal Placeholder
-  const placeholder = (
-    <div className="h-full w-full bg-black flex flex-col items-center justify-center text-green-700 font-mono border border-green-900">
-       <span className="text-4xl opacity-50">?</span>
-       <span className="text-[10px] mt-2">NO_IMAGE_DATA</span>
-    </div>
-  );
+  // Helper for placeholder initials
+  const getInitials = (name = 'U') => name.charAt(0).toUpperCase();
 
   return (
-    // MAIN CONTAINER
-    <div className="min-h-[calc(100vh-64px)] bg-[#050505] text-green-500 font-mono flex items-center justify-center p-4 relative overflow-hidden selection:bg-green-500 selection:text-black">
+    <div className="min-h-[calc(100vh-64px)] bg-[#050505] text-gray-200 font-sans flex items-center justify-center p-4 md:p-8 relative overflow-hidden selection:bg-green-500 selection:text-black">
       
-      {/* BACKGROUND EFFECTS */}
-      <div className="absolute inset-0 pointer-events-none z-0">
-        <div className="absolute inset-0 bg-[length:100%_4px] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%)]"></div>
-        <div className="absolute inset-0 opacity-10" 
-             style={{ backgroundImage: 'linear-gradient(#22c55e 1px, transparent 1px), linear-gradient(90deg, #22c55e 1px, transparent 1px)', backgroundSize: '40px 40px' }}>
-        </div>
-      </div>
+      {/* MINIMALIST GRID BACKGROUND */}
+      <div className="absolute inset-0 pointer-events-none z-0 bg-[linear-gradient(rgba(34,197,94,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(34,197,94,0.03)_1px,transparent_1px)] bg-[size:64px_64px]"></div>
 
       {/* PROFILE CARD */}
-      <div className="w-full max-w-2xl relative z-10 bg-[#0a0a0a] border border-gray-800 shadow-[0_0_30px_rgba(0,0,0,0.8)]">
+      <div className="w-full max-w-3xl relative z-10 bg-[#0a0a0a] border border-gray-800 rounded-2xl shadow-xl overflow-hidden mt-4">
         
-        {/* HEADER BAR */}
-        <div className="flex items-center justify-between p-3 border-b border-gray-800 bg-black/50">
-           <h2 className="text-sm font-bold tracking-widest uppercase flex items-center gap-2">
-              <span className="w-2 h-2 bg-green-500"></span>
-              PERSONNEL_FILE: {user.username.toUpperCase()}
-           </h2>
-           <span className="text-[10px] text-gray-600 font-bold tracking-widest">CONFIDENTIAL</span>
-        </div>
-
-        <div className="p-6 md:p-8">
-          <div className="flex flex-col md:flex-row gap-8 items-start">
+        <div className="p-8 md:p-10">
+          <div className="flex flex-col md:flex-row gap-10 items-center md:items-start">
             
             {/* LEFT COLUMN: IMAGE & UPLOAD */}
-            <div className="flex flex-col items-center w-full md:w-auto">
+            <div className="flex flex-col items-center w-full md:w-1/3">
+                
                 {/* Profile Picture Frame */}
-                <div className="relative h-40 w-40 border-2 border-green-500 p-1 bg-black group shadow-[0_0_15px_rgba(34,197,94,0.2)]">
-                    {/* Decorative Corners */}
-                    <div className="absolute top-0 left-0 w-2 h-2 bg-green-500"></div>
-                    <div className="absolute top-0 right-0 w-2 h-2 bg-green-500"></div>
-                    <div className="absolute bottom-0 left-0 w-2 h-2 bg-green-500"></div>
-                    <div className="absolute bottom-0 right-0 w-2 h-2 bg-green-500"></div>
-                    
-                    <div className="h-full w-full overflow-hidden relative">
-                        {user.profilePicture ? <img src={user.profilePicture} alt="Profile" className="h-full w-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" /> : placeholder}
-                        {/* Scanline overlay */}
-                        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,0,0.1)_50%,rgba(0,0,0,0)_50%)] bg-[length:100%_4px] pointer-events-none opacity-50"></div>
-                    </div>
+                <div className="h-40 w-40 rounded-full border border-gray-700 bg-[#111] shadow-inner mb-6 flex items-center justify-center overflow-hidden flex-shrink-0 relative group">
+                    {user.profilePicture ? (
+                        <img src={user.profilePicture} alt="Profile" className="h-full w-full object-cover group-hover:opacity-90 transition-opacity" />
+                    ) : (
+                        <span className="text-5xl font-bold text-gray-600">{getInitials(user.name || user.username)}</span>
+                    )}
                 </div>
 
                 {/* Upload Control */}
-                <div className="mt-6 w-full max-w-[160px]">
-                    <div className="flex flex-col gap-2">
+                <div className="w-full">
+                    <div className="flex flex-col gap-3">
                         <input
                             type="file"
                             id="file-upload"
@@ -108,18 +83,18 @@ const Profile = () => {
                         />
                         <label
                             htmlFor="file-upload"
-                            className="cursor-pointer text-center text-[10px] uppercase tracking-widest py-2 border border-gray-700 hover:border-green-500 hover:text-green-400 hover:bg-green-900/20 transition-all truncate px-2"
+                            className="cursor-pointer text-center text-sm font-semibold text-gray-300 py-2.5 px-4 rounded-lg border border-gray-700 bg-[#111] hover:bg-gray-800 hover:border-gray-500 transition-all truncate block w-full"
                         >
-                            {file ? file.name : "[ SELECT_IMAGE ]"}
+                            {file ? file.name : "Select Image"}
                         </label>
                         
                         {file && (
                             <button
                                 onClick={handleUpload}
                                 disabled={loading}
-                                className="bg-green-600 text-black text-[10px] font-bold uppercase py-2 hover:bg-white transition-all disabled:opacity-50"
+                                className="w-full bg-green-600 text-black text-sm font-bold py-2.5 px-4 rounded-lg hover:bg-green-500 transition-colors shadow-lg shadow-green-900/20 disabled:opacity-50 disabled:cursor-wait"
                             >
-                                {loading ? "UPLOADING..." : "EXECUTE_UPLOAD"}
+                                {loading ? "Uploading..." : "Save Picture"}
                             </button>
                         )}
                     </div>
@@ -127,71 +102,53 @@ const Profile = () => {
             </div>
 
             {/* RIGHT COLUMN: DETAILS */}
-            <div className="flex-1 w-full">
-                <div className="space-y-6">
-                    {/* User Info Block */}
-                    <div className="border border-gray-800 bg-black/40 p-4 relative">
-                        <h3 className="absolute -top-3 left-3 bg-[#0a0a0a] px-2 text-[10px] text-gray-500 uppercase">Identity_Parameters</h3>
-                        <div className="grid gap-4">
-                            <div>
-                                <p className="text-[10px] text-gray-600 uppercase tracking-widest mb-1">System Handle</p>
-                                <p className="text-xl text-white font-bold tracking-wider">{user.username}</p>
-                            </div>
-                            <div>
-                                <p className="text-[10px] text-gray-600 uppercase tracking-widest mb-1">Comm Protocol</p>
-                                <p className="text-sm text-green-400 font-mono">{user.email}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Skills Block */}
-                    <div className="border border-gray-800 bg-black/40 p-4 relative min-h-[120px]">
-                        <h3 className="absolute -top-3 left-3 bg-[#0a0a0a] px-2 text-[10px] text-gray-500 uppercase">Installed_Modules (Skills)</h3>
-                        
-                        {user.skills && user.skills.length > 0 ? (
-                            <div className="flex flex-wrap gap-2 mt-2">
-                                {user.skills.map((skill, idx) => (
-                                    <span key={idx} className="bg-green-900/20 text-green-400 border border-green-800 text-xs px-2 py-1 uppercase tracking-wide hover:bg-green-500 hover:text-black hover:border-green-500 transition-colors cursor-default">
-                                        [{skill}]
-                                    </span>
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="text-gray-600 text-xs italic mt-2">{">"} NO_MODULES_DETECTED</p>
-                        )}
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex gap-4 pt-2">
-                        <button 
-                            onClick={() => navigate("/edit-profile")} 
-                            className="flex-1 border border-green-600 text-green-500 text-xs font-bold py-3 uppercase tracking-widest hover:bg-green-600 hover:text-black transition-all"
-                        >
-                            :: Edit_Params
-                        </button>
-                        <button 
-                            onClick={() => navigate("/edit-skills")} 
-                            className="flex-1 border border-gray-600 text-gray-400 text-xs font-bold py-3 uppercase tracking-widest hover:border-green-500 hover:text-green-500 transition-all"
-                        >
-                            :: Config_Modules
-                        </button>
-                    </div>
-
+            <div className="flex-1 w-full space-y-8 pt-2 text-center md:text-left">
+                
+                {/* User Info */}
+                <div>
+                    <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight mb-1">{user.name || user.username}</h1>
+                    <p className="text-gray-400 font-medium">@{user.username}</p>
+                    <p className="text-sm text-gray-500 font-mono mt-3 inline-block bg-[#111] px-3 py-1.5 rounded-md border border-gray-800">
+                      {user.email}
+                    </p>
                 </div>
+
+                {/* Skills Block */}
+                <div>
+                    <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Technical Skills</h3>
+                    {user.skills && user.skills.length > 0 ? (
+                        <div className="flex flex-wrap justify-center md:justify-start gap-2">
+                            {user.skills.map((skill, idx) => (
+                                <span key={idx} className="bg-[#111] text-gray-300 border border-gray-800 text-sm px-3 py-1.5 rounded-md">
+                                    {skill}
+                                </span>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-gray-500 text-sm">No skills added yet.</p>
+                    )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-900">
+                    <button 
+                        onClick={() => navigate("/edit-profile")} 
+                        className="flex-1 bg-[#111] border border-gray-700 text-gray-200 text-sm font-semibold py-3 rounded-lg hover:bg-gray-800 hover:text-white transition-all"
+                    >
+                        Edit Profile
+                    </button>
+                    <button 
+                        onClick={() => navigate("/edit-skills")} 
+                        className="flex-1 bg-[#111] border border-gray-700 text-gray-200 text-sm font-semibold py-3 rounded-lg hover:bg-gray-800 hover:text-white transition-all"
+                    >
+                        Manage Skills
+                    </button>
+                </div>
+
             </div>
 
           </div>
         </div>
-
-        {/* FOOTER DECORATION */}
-        <div className="border-t border-gray-800 bg-black/50 p-2 flex justify-end">
-            <div className="flex gap-1">
-                <div className="w-1 h-1 bg-green-500 rounded-full animate-ping"></div>
-                <div className="w-1 h-1 bg-green-500 rounded-full"></div>
-                <div className="w-1 h-1 bg-green-500 rounded-full"></div>
-            </div>
-        </div>
-
       </div>
     </div>
   );
