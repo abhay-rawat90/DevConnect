@@ -7,7 +7,7 @@ import toast from "react-hot-toast";
 const Requests = () => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { token } = useAuth();
+  const { token, fetchUserData } = useAuth();
 
   const fetchRequests = async () => {
     try {
@@ -39,6 +39,7 @@ const Requests = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success("Connection accepted!");
+      fetchUserData(); // so the new connection shows up everywhere straight away
     } catch (err) {
       // Re-fetch if it fails to revert the optimistic update
       fetchRequests();

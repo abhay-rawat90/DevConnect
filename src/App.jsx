@@ -1,4 +1,4 @@
-import { Router,Routes, Route, Link} from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -6,7 +6,6 @@ import NotFound from "./pages/NotFound";
 import Register from "./pages/Register";
 import Navbar from "./components/navbar"
 import PrivateRoute from "./components/PrivateRoute";
-import { useAuth } from "./context/AuthContext"; 
 import GuestRoute from "./components/GuestRoute";
 import Profile from "./pages/Profile";
 import EditProfile from "./pages/Edit-Profile";
@@ -17,15 +16,6 @@ import Chat from "./pages/Chat";
 import UserProfile from "./pages/UserProfile";
 
 export default function App() {
-  const { loading } = useAuth();
-  if(loading)
-  {
-    return(
-      <div className="min-h-screen flex justify-center items-center text-xl">
-        Loading...
-      </div>
-    );
-  }
   return (
     <>
     <Navbar />

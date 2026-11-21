@@ -3,21 +3,36 @@ const router = express.Router();
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const protect = require("../middlewares/auth");
+
+const isNonEmptyString = (value) => typeof value === "string" && value.trim().length > 0;
 
 router.post("/register",async (req,res) => {
     try{
-        const {name, username, email, password} = req.body;
+        const {name, username, email, password} = req.body || {};
 
-        if(!name || !username || !email || !password)
+        if(![name, username, email, password].every(isNonEmptyString))
         {
             return res.status(400).json({message: "All Fields are Required"});
         }
-        const userExists = await User.findOne({email});
+        if(!/^\S+@\S+\.\S+$/.test(email.trim()))
+        {
+            return res.status(400).json({message: "Please enter a valid email"});
+        }
+        if(password.length < 6)
+        {
+            return res.status(400).json({message: "Password must be at least 6 characters"});
+        }
+
+        const cleanEmail = email.trim().toLowerCase();
+        const cleanUsername = username.trim();
+
+        const userExists = await User.findOne({email: cleanEmail});
         if(userExists){
             return res.status(400).json({message: "Email already Exists"});
         }
 
-        const userNameExist = await User.findOne({ username });
+        const userNameExist = await User.findOne({ username: cleanUsername });
         if(userNameExist)
         {
             return res.status(400).json({message: "Username already exists"});
@@ -27,7 +42,7 @@ router.post("/register",async (req,res) => {
         const hashedPassword = await bcrypt.hash(password, salt);
 
 
-        const newUser = new User({name, username, email, password: hashedPassword});
+        const newUser = new User({name: name.trim(), username: cleanUsername, email: cleanEmail, password: hashedPassword});
         await newUser.save();
         res.status(201).json({message: "User Registered Successfully"});
     }
@@ -39,9 +54,15 @@ router.post("/register",async (req,res) => {
 
 router.post("/login",async (req,res) => {
     try{
-        const {email, password} = req.body;
+        const {email, password} = req.body || {};
 
-        const user = await User.findOne({email});
+        if(!isNonEmptyString(email) || !isNonEmptyString(password))
+        {
+            return res.status(400).json({message: "Email and password are required"});
+        }
+
+        // Accounts created before emails were lower-cased are still found
+        const user = await User.findOne({email: email.trim().toLowerCase()}) || await User.findOne({email: email.trim()});
         if(!user)
         {
             return res.status(400).json({ message:  "Invalid Credentials"});
@@ -50,7 +71,7 @@ router.post("/login",async (req,res) => {
         const isMatch = await bcrypt.compare(password,user.password);
         if(!isMatch)
         {
-            return res.status(400).json({message: "Incorrect Password"});
+            return res.status(400).json({message: "Invalid Credentials"});
         }
 
         const payload = {
@@ -71,45 +92,22 @@ router.post("/login",async (req,res) => {
                 profilePicture: user.profilePicture
             },
         });
-    } 
+    }
     catch(err){
         console.log(err);
-        req.status(500).json({message: "Server Errror"});
+        res.status(500).json({message: "Server Error"});
     }
 });
 
-
-const protect = require("../middlewares/auth");
 
 router.get('/me', protect, async(req,res) => {
-    const user = await User.findOne(req.user).select("-password");
-    res.json(user);
-});
-
-
-router.put("/update",protect, async(req,res) => {
-    const  {name, username} = req.body;
-    
-    try 
-    {
-        const existingUser = await User.findOne({ username });
-        if(existingUser && existingUser._id.toString() !== req.user) 
-        {
-            return res.status(400).json({ message: "Username Already Taken"});
-        }
-
-        const updatedUser = await User.findByIdAndUpdate(
-            req.user,
-            {name, username},
-            {new : true}
-        ).select("-password");
-
-        res.json({ user : updatedUser});
-    }
-    catch(err)
-    {
+    try {
+        const user = await User.findById(req.user._id).select("-password");
+        if(!user) return res.status(404).json({message: "User not Found"});
+        res.json(user);
+    } catch(err) {
         console.log(err);
-        res.status(500).json({ message : "Server Error"});
+        res.status(500).json({message: "Server Error"});
     }
 });
 

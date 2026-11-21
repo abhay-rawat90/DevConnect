@@ -5,7 +5,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 
 const EditProfile = () => {
-  const { user, token, login } = useAuth();
+  const { user, token, updateUser } = useAuth();
   const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
@@ -44,11 +44,9 @@ const EditProfile = () => {
       );
 
       // Update the context with new user data
-      login(res.data.user, token); 
+      updateUser(res.data.user);
       toast.success("Profile updated successfully!");
-      
-      // UX Improvement: Automatically send them back to the profile
-      setTimeout(() => navigate("/profile"), 1000);
+      navigate("/profile");
       
     } catch (err) {
       console.error(err);

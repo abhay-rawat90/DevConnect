@@ -4,9 +4,20 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 
 export default [
-  { ignores: ['dist'] },
+  { ignores: ['dist', 'Server/node_modules'] },
+  {
+    // The backend is a separate Node (CommonJS) project
+    files: ['Server/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'commonjs',
+      globals: globals.node,
+    },
+    rules: js.configs.recommended.rules,
+  },
   {
     files: ['**/*.{js,jsx}'],
+    ignores: ['Server/**'],
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,

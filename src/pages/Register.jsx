@@ -39,7 +39,7 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`, form);
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`, form);
       
       toast.success("Account created successfully! Please log in.");
       setForm({ name: "", username: "", email: "", password: "" });

@@ -69,8 +69,10 @@ const UserProfile = () => {
     );
   }
   
-  const isConnected = currentUser?.connections?.includes(profile._id);
-  const isMe = currentUser?._id === profile._id || currentUser?.id === profile._id;
+  const currentUserId = currentUser?._id || currentUser?.id;
+  // profile comes fresh from the server, so check its list too (ours may be stale until the next refresh)
+  const isConnected = currentUser?.connections?.includes(profile._id) || profile.connections?.includes(currentUserId);
+  const isMe = currentUserId === profile._id;
 
   // Helper for placeholder avatar
   const getInitials = (name = 'U') => name.charAt(0).toUpperCase();

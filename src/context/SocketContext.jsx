@@ -9,42 +9,51 @@ const SocketContext = createContext();
 export const useSocket = () => useContext(SocketContext);
 
 export const SocketProvider = ({ children }) => {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const socket = useRef();
   const [onlineUsers, setOnlineUsers] = useState([]);
-  const location = useLocation(); 
+  const location = useLocation();
+
+  // Keep the current path in a ref so the message listener always sees the latest page
+  const pathRef = useRef(location.pathname);
+  useEffect(() => {
+    pathRef.current = location.pathname;
+  }, [location.pathname]);
+
+  const userId = user?.id || user?._id;
 
   useEffect(() => {
+    if (!userId || !token) return;
 
-    const userId = user?.id || user?._id;
-    if (userId) {
-      // Connect to Socket
-      socket.current = io(import.meta.env.VITE_API_URL);
-      socket.current.emit("addUser", userId);
-      socket.current.on("getUsers", (users) => setOnlineUsers(users));
+    // Connect to Socket. The server reads who we are from the token,
+    // and re-registers us automatically whenever the socket reconnects.
+    const s = io(import.meta.env.VITE_API_URL, { auth: { token } });
+    socket.current = s;
+    s.on("getUsers", (users) => setOnlineUsers(users));
 
-      // Global Notification Listener
-      socket.current.on("getMessage", (data) => {
-        // Show notification if NOT on chat page
-        if (location.pathname !== "/chat") {
-          toast(`📩 New message from ${data.senderName || "User"}`, {
-            duration: 4000,
-            position: "top-right",
-            style: {
-              background: "#050505",
-              color: "#22c55e",
-              border: "1px solid #22c55e",
-              fontFamily: "monospace"
-            },
-          });
-        }
-      });
-    }
+    // Global Notification Listener
+    s.on("getMessage", (data) => {
+      // Show notification if NOT on chat page
+      if (pathRef.current !== "/chat") {
+        toast(`📩 New message from ${data.senderName || "User"}`, {
+          duration: 4000,
+          position: "top-right",
+          style: {
+            background: "#050505",
+            color: "#22c55e",
+            border: "1px solid #22c55e",
+            fontFamily: "monospace"
+          },
+        });
+      }
+    });
 
     return () => {
-      if (socket.current) socket.current.disconnect();
+      s.disconnect();
+      if (socket.current === s) socket.current = null;
+      setOnlineUsers([]);
     };
-  }, [user]); 
+  }, [userId, token]);
 
   return (
     <SocketContext.Provider value={{ socket, onlineUsers }}>

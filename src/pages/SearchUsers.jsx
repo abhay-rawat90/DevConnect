@@ -27,7 +27,8 @@ const SearchUsers = () => {
         setLoading(true);
 
         try {
-            const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/users/search?skill=${skill}`, {
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/users/search`, {
+                params: { skill: skill.trim() },
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -37,7 +38,7 @@ const SearchUsers = () => {
             const currentUserId = user?._id || user?.id;
             const filteredResults = data.filter(foundUser => {
                 const isMe = foundUser._id === currentUserId;
-                const isAlreadyConnected = user?.connections && user.connections.includes(foundUser._id);
+                const isAlreadyConnected = user?.connections?.includes(foundUser._id) || foundUser.connections?.includes(currentUserId);
                 return !isMe && !isAlreadyConnected;
             });
             

@@ -1,4 +1,5 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const router = express.Router();
 const protect = require("../middlewares/auth");
 const User  = require("../models/User");
@@ -11,6 +12,8 @@ cloudinary.config({
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET,
 });
+
+const escapeRegex = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 router.post('/upload-picture', protect, upload.single('profilePicture'), async (req, res) => {
   if (!req.file) {
@@ -46,21 +49,30 @@ router.post('/upload-picture', protect, upload.single('profilePicture'), async (
 });
 
 router.put("/update",protect, async(req,res) => {
-    const  {name, username} = req.body;
-    
-    try 
+    const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
+    const username = typeof req.body?.username === "string" ? req.body.username.trim() : "";
+
+    if(!name || !username)
+    {
+        return res.status(400).json({ message: "Name and username are required"});
+    }
+
+    try
     {
         const existingUser = await User.findOne({ username });
-        if(existingUser && existingUser._id.toString() !== req.user) 
+        // Keeping your own username is fine; only someone else's is taken
+        if(existingUser && existingUser._id.toString() !== req.user._id)
         {
             return res.status(400).json({ message: "Username Already Taken"});
         }
 
         const updatedUser = await User.findByIdAndUpdate(
-            req.user,
+            req.user._id,
             {name, username},
-            {new : true}
+            {new : true, runValidators: true}
         ).select("-password");
+
+        if(!updatedUser) return res.status(404).json({ message: "User not found"});
 
         res.json({ user : updatedUser});
     }
@@ -72,14 +84,22 @@ router.put("/update",protect, async(req,res) => {
 });
 
 router.put("/skills",protect, async (req, res) => {
-    const { skills } = req.body;
+    const { skills } = req.body || {};
+
+    if(!Array.isArray(skills) || !skills.every(s => typeof s === "string"))
+    {
+        return res.status(400).json({message: "Skills must be a list of text values"});
+    }
+
+    // Trim, drop blanks and duplicates
+    const cleanSkills = [...new Set(skills.map(s => s.trim()).filter(Boolean))];
 
     try{
         const user  = await User.findByIdAndUpdate(
-            req.user,
-            { skills },
+            req.user._id,
+            { skills: cleanSkills },
             {new: true}
-        );
+        ).select("-password");
         res.json(user);
     }
     catch(err)
@@ -90,27 +110,30 @@ router.put("/skills",protect, async (req, res) => {
 });
 
 router.get("/search", protect, async (req,res) => {
-    const { skill } = req.query;
+    const skill = typeof req.query.skill === "string" ? req.query.skill.trim() : "";
 
     if(!skill) return res.status(400).json({message : "Skill is Required"});
 
     try{
-        const users = await User.find({ skills : { $in: [skill]}}).select("-password");
+        // Case-insensitive exact match, so "react" finds "React"
+        const pattern = new RegExp(`^${escapeRegex(skill)}$`, "i");
+        const users = await User.find({ skills: pattern }).select("-password");
         res.json(users);
     }
     catch(err)
     {
+        console.log(err);
         res.status(500).json({ message: "Search Failed"})
     }
 });
 
 router.get("/connections", protect, async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).populate('connections', 'username email profilePicture');
+    const user = await User.findById(req.user._id).populate('connections', 'name username email profilePicture');
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    res.json(user.connections);
+    res.json(user.connections.filter(Boolean));
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server Error" });
@@ -120,6 +143,9 @@ router.get("/connections", protect, async (req, res) => {
 router.get("/profile", protect, getMyProfile);
 
 router.get("/profile/:userId", protect, async (req, res) => {
+    if(!mongoose.isValidObjectId(req.params.userId)) {
+        return res.status(404).json({message: "User not found"});
+    }
     try{
         const user = await User.findById(req.params.userId).select("-password");
         if(!user) {
@@ -127,11 +153,8 @@ router.get("/profile/:userId", protect, async (req, res) => {
         }
         res.json(user);
     } catch(err) {
-        if(err.kind === 'ObjectId') {
-            return res.status(404).json({message: "User not found"});
-        }
         console.log(err);
-        res.status.json({message: "Server Error"});
+        res.status(500).json({message: "Server Error"});
     }
 })
 

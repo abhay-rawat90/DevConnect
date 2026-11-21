@@ -17,21 +17,22 @@ const Chat = () => {
 
   // --- 1. SOCKET LISTENER ---
   useEffect(() => {
-    if (!socket.current) return;
+    const s = socket.current;
+    if (!s) return;
 
     const handleIncomingMessage = (data) => {
       if (currentChat && data.senderId === currentChat._id) {
         setMessages((prev) => [
           ...prev, 
-          { sender: data.senderId, content: data.text, createdAt: Date.now() }
+          { sender: data.senderId, content: data.text, createdAt: data.createdAt || Date.now() }
         ]);
       }
     };
 
-    socket.current.on("getMessage", handleIncomingMessage);
+    s.on("getMessage", handleIncomingMessage);
 
     return () => {
-      socket.current.off("getMessage", handleIncomingMessage);
+      s.off("getMessage", handleIncomingMessage);
     };
   }, [currentChat, socket]); 
 
@@ -49,17 +50,20 @@ const Chat = () => {
   }, [user, token]);
 
   useEffect(() => {
+    setMessages([]); // don't flash the previous conversation while the new one loads
+    let ignore = false; // ignore a slow response if the user already switched to another chat
     const getMessages = async () => {
       if (currentChat) {
         try {
           const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/messages/${currentChat._id}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
-          setMessages(res.data);
+          if (!ignore) setMessages(res.data);
         } catch (err) { console.log(err); }
       }
     };
     getMessages();
+    return () => { ignore = true; };
   }, [currentChat, token]);
 
   // Scroll to bottom when messages update
@@ -70,18 +74,18 @@ const Chat = () => {
   // --- 3. MESSAGE HANDLER ---
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!newMessage.trim()) return;
+    const text = newMessage.trim();
+    if (!text || !currentChat || !socket.current) return;
 
     const messagePayload = {
-      senderId: userId,
       receiverId: currentChat._id,
-      text: newMessage,
+      text,
       senderName: user.name || user.username 
     };
 
     socket.current.emit("sendMessage", messagePayload);
     
-    setMessages([...messages, { sender: userId, content: newMessage, createdAt: Date.now() }]);
+    setMessages((prev) => [...prev, { sender: userId, content: text, createdAt: Date.now() }]);
     setNewMessage("");
   };
 

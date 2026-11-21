@@ -13,8 +13,8 @@ const protect = (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = { _id: decoded.userId }; 
     next();
-  } catch (err) {
-    console.log(err);
+  } catch {
+    // Expired or tampered tokens are expected; no need for a stack trace
     res.status(401).json({ message: "Invalid Token" });
   }
 };
