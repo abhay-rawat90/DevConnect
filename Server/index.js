@@ -68,24 +68,13 @@ app.use((err, req, res, next) => {
     res.status(500).json({ message: "Server Error" });
 });
 
-let onlineUsers = [];
+const User = require('./models/User');
 
-const addUser = (userId, socketId) => {
-    const existingUser = onlineUsers.find(user => user.userId === userId);
-    if (existingUser) {
-        existingUser.socketId = socketId; // Update existing session
-    } else {
-        onlineUsers.push({ userId, socketId }); // Add new session
-    }
-}
+// userId -> number of open sockets (one per browser tab). A user stays "online" while any tab is open.
+const onlineCounts = new Map();
+const onlineList = () => [...onlineCounts.keys()].map(userId => ({ userId }));
 
-const removeUser = (socketId) => {
-    onlineUsers = onlineUsers.filter(user => user.socketId !== socketId);
-};
-
-const getUser = (userId) => {
-    return onlineUsers.find(user => user.userId === userId);
-};
+const MAX_MESSAGE_LENGTH = 2000;
 
 // Only logged-in users can open a socket. The user id comes from the verified JWT,
 // so nobody can register as, or send messages as, someone else.
@@ -102,14 +91,24 @@ io.use((socket, next) => {
 });
 
 io.on("connection", (socket) => {
-    // Registering here (not on a client event) means a reconnect re-registers automatically
-    addUser(socket.userId, socket.id);
-    io.emit("getUsers", onlineUsers);
+    // Each user gets a private room, so every open tab receives their messages.
+    // Registering here (not on a client event) means a reconnect re-registers automatically.
+    socket.join(socket.userId);
+    onlineCounts.set(socket.userId, (onlineCounts.get(socket.userId) || 0) + 1);
+    io.emit("getUsers", onlineList());
 
-    socket.on("sendMessage", async ({ receiverId, text, senderName } = {}) => {
+    // `ack` tells the sender whether the message was really saved
+    socket.on("sendMessage", async (payload, ack) => {
+        const reply = typeof ack === "function" ? ack : () => {};
         try {
+            const { receiverId, text } = payload || {};
             const content = typeof text === "string" ? text.trim() : "";
-            if (!content || !mongoose.isValidObjectId(receiverId)) return;
+            if (!content || !mongoose.isValidObjectId(receiverId)) {
+                return reply({ ok: false, error: "Invalid message" });
+            }
+            if (content.length > MAX_MESSAGE_LENGTH) {
+                return reply({ ok: false, error: `Messages can be at most ${MAX_MESSAGE_LENGTH} characters` });
+            }
 
             const newMessage = new Message({
                 sender: socket.userId,
@@ -118,24 +117,28 @@ io.on("connection", (socket) => {
             });
             await newMessage.save();
 
-            const user = getUser(receiverId);
-            if (user) {
-                io.to(user.socketId).emit("getMessage", {
-                    senderId: socket.userId,
-                    text: content,
-                    senderName, // Pass this to the frontend
-                    createdAt: newMessage.createdAt,
-                });
-            }
+            // Name for the notification comes from the database, not from the client
+            const sender = await User.findById(socket.userId).select("name username").lean();
+
+            io.to(receiverId).emit("getMessage", {
+                senderId: socket.userId,
+                text: content,
+                senderName: sender?.name || sender?.username,
+                createdAt: newMessage.createdAt,
+            });
+            reply({ ok: true, message: { sender: socket.userId, content, createdAt: newMessage.createdAt, _id: newMessage._id } });
         } catch (err) {
             // Never let a bad message take the whole server down
             console.error("sendMessage failed:", err.message);
+            reply({ ok: false, error: "Message could not be sent" });
         }
     });
 
     socket.on("disconnect", () => {
-        removeUser(socket.id);
-        io.emit("getUsers", onlineUsers);
+        const left = (onlineCounts.get(socket.userId) || 1) - 1;
+        if (left > 0) onlineCounts.set(socket.userId, left);
+        else onlineCounts.delete(socket.userId);
+        io.emit("getUsers", onlineList());
     });
 });
 

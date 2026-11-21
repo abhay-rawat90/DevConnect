@@ -10,8 +10,8 @@ const Navbar = () => {
   const isActive = (path) => location.pathname === path;
 
   const placeholder = (
-    <div className="h-full w-full bg-[#0a0a0a] flex items-center justify-center text-gray-500 text-xs font-medium">
-      ?
+    <div className="h-full w-full bg-[#0a0a0a] flex items-center justify-center text-gray-400 text-xs font-bold">
+      {(user?.name || user?.username || "?").charAt(0).toUpperCase()}
     </div>
   );
 
@@ -79,6 +79,7 @@ const Navbar = () => {
             <button
               onClick={() => setIsOpen(!isOpen)}
               className="text-gray-400 hover:text-white focus:outline-none p-2"
+              aria-expanded={isOpen}
             >
               <span className="sr-only">Open main menu</span>
               {isOpen ? (

@@ -106,22 +106,22 @@ const Dashboard = () => {
                                     {conn.profilePicture ? (
                                         <img src={conn.profilePicture} className="h-full w-full object-cover group-hover:scale-105 transition-transform" alt={conn.username} />
                                     ) : (
-                                        <span className="text-gray-500 font-bold text-lg">{conn.username.charAt(0).toUpperCase()}</span>
+                                        <span className="text-gray-500 font-bold text-lg">{(conn.name || conn.username).charAt(0).toUpperCase()}</span>
                                     )}
                                 </div>
                                 <div className="overflow-hidden">
                                     <h4 className="font-semibold text-gray-200 truncate group-hover:text-green-400 transition-colors">
-                                        {conn.username}
+                                        {conn.name || conn.username}
                                     </h4>
                                     <p className="text-xs text-gray-500 truncate font-mono mt-0.5">
-                                        {conn.email}
+                                        @{conn.username}
                                     </p>
                                 </div>
                              </div>
                              
                              <Link 
                                 to={`/profile/${conn._id}`}
-                                className="opacity-0 group-hover:opacity-100 flex-shrink-0 ml-4 px-3 py-1.5 bg-green-500/10 text-green-500 text-xs font-semibold rounded hover:bg-green-500/20 transition-all"
+                                className="md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 flex-shrink-0 ml-4 px-3 py-1.5 bg-green-500/10 text-green-500 text-xs font-semibold rounded hover:bg-green-500/20 transition-all"
                              >
                                 View
                              </Link>

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { useSocket } from "../context/SocketContext";
+import toast from "react-hot-toast";
 
 const Chat = () => {
   const [connections, setConnections] = useState([]);
@@ -11,7 +12,7 @@ const Chat = () => {
   const { user, token } = useAuth();
   
   const { socket, onlineUsers } = useSocket();
-  const scrollRef = useRef();
+  const messagesRef = useRef();
 
   const userId = user?.id || user?._id; // Robust ID extraction
 
@@ -26,6 +27,12 @@ const Chat = () => {
           ...prev, 
           { sender: data.senderId, content: data.text, createdAt: data.createdAt || Date.now() }
         ]);
+      } else {
+        // A message from someone whose chat isn't open: let the user know instead of dropping it silently
+        toast(`📩 New message from ${data.senderName || "User"}`, {
+          id: `msg-${data.senderId}`,
+          style: { background: "#050505", color: "#22c55e", border: "1px solid #22c55e", fontFamily: "monospace" },
+        });
       }
     };
 
@@ -68,33 +75,50 @@ const Chat = () => {
 
   // Scroll to bottom when messages update
   useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+    const list = messagesRef.current;
+    if (list) list.scrollTo({ top: list.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
   // --- 3. MESSAGE HANDLER ---
   const handleSubmit = (e) => {
     e.preventDefault();
     const text = newMessage.trim();
-    if (!text || !currentChat || !socket.current) return;
+    if (!text || !currentChat) return;
 
-    const messagePayload = {
-      receiverId: currentChat._id,
-      text,
-      senderName: user.name || user.username 
+    // Show the message straight away, then confirm (or flag) it once the server replies
+    const tempId = `temp-${Date.now()}-${Math.random()}`;
+    setMessages((prev) => [...prev, { _id: tempId, sender: userId, content: text, createdAt: Date.now(), status: "sending" }]);
+    setNewMessage("");
+
+    const markFailed = (error) => {
+      setMessages((prev) => prev.map((m) => (m._id === tempId ? { ...m, status: "failed" } : m)));
+      toast.error(error || "Message not sent. Check your connection and try again.");
     };
 
-    socket.current.emit("sendMessage", messagePayload);
-    
-    setMessages((prev) => [...prev, { sender: userId, content: text, createdAt: Date.now() }]);
-    setNewMessage("");
+    if (!socket.current) return markFailed();
+
+    socket.current
+      .timeout(10000)
+      .emit("sendMessage", { receiverId: currentChat._id, text }, (err, res) => {
+        if (err || !res?.ok) return markFailed(res?.error);
+        setMessages((prev) => prev.map((m) => (m._id === tempId ? res.message : m)));
+      });
   };
 
   // Helpers
   const getInitials = (name = '') => name.substring(0, 2).toUpperCase();
-  const formatTimestamp = (timestamp) => new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const formatTimestamp = (timestamp) => {
+    const date = new Date(timestamp);
+    const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    // Older messages also show the date, otherwise everything looks like it was sent today
+    return date.toDateString() === new Date().toDateString()
+      ? time
+      : `${date.toLocaleDateString([], { day: 'numeric', month: 'short' })}, ${time}`;
+  };
+  const isChatPartnerOnline = currentChat && onlineUsers.some(ou => ou.userId === currentChat._id);
 
   return (
-    <div className="flex h-[calc(100vh-64px)] font-sans text-gray-200 bg-[#050505] relative overflow-hidden selection:bg-green-500 selection:text-black">
+    <div className="flex h-[calc(100dvh-64px)] font-sans text-gray-200 bg-[#050505] relative overflow-hidden selection:bg-green-500 selection:text-black">
       
       {/* MINIMALIST GRID BACKGROUND */}
       <div className="absolute inset-0 pointer-events-none z-0 bg-[linear-gradient(rgba(34,197,94,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(34,197,94,0.02)_1px,transparent_1px)] bg-[size:64px_64px]"></div>
@@ -122,7 +146,7 @@ const Chat = () => {
                   {/* Avatar with Online Status Indicator */}
                   <div className="relative">
                     <div className="h-12 w-12 rounded-full bg-[#1a1a1a] border border-gray-800 flex items-center justify-center font-bold text-gray-400 overflow-hidden flex-shrink-0">
-                      {c.profilePicture ? <img src={c.profilePicture} className="h-full w-full object-cover" /> : getInitials(c.username)}
+                      {c.profilePicture ? <img src={c.profilePicture} alt={c.username} className="h-full w-full object-cover" /> : getInitials(c.username)}
                     </div>
                     <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-[#050505] ${isOnline ? 'bg-green-500' : 'bg-gray-600'}`}></div>
                   </div>
@@ -147,7 +171,7 @@ const Chat = () => {
       </div>
 
       {/* CHAT AREA */}
-      <div className={`flex-1 flex-col bg-[#050505] z-10 relative ${currentChat ? 'flex' : 'hidden md:flex'}`}>
+      <div className={`flex-1 min-w-0 flex-col bg-[#050505] z-10 relative ${currentChat ? 'flex' : 'hidden md:flex'}`}>
         
         {currentChat ? (
           <>
@@ -156,6 +180,7 @@ const Chat = () => {
               <div className="flex items-center gap-4">
                 <button 
                   onClick={() => setCurrentChat(null)} 
+                  aria-label="Back to conversations"
                   className="md:hidden text-gray-400 hover:text-white transition-colors"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg>
@@ -163,12 +188,13 @@ const Chat = () => {
                 
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-full border border-gray-800 bg-[#111] flex items-center justify-center overflow-hidden">
-                    {currentChat.profilePicture ? <img src={currentChat.profilePicture} className="h-full w-full object-cover" /> : <span className="text-sm font-bold text-gray-500">{getInitials(currentChat.username)}</span>}
+                    {currentChat.profilePicture ? <img src={currentChat.profilePicture} alt={currentChat.username} className="h-full w-full object-cover" /> : <span className="text-sm font-bold text-gray-500">{getInitials(currentChat.username)}</span>}
                   </div>
                   <div>
                       <h2 className="font-bold text-white">{currentChat.name || currentChat.username}</h2>
-                      <span className="text-xs text-green-500 flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> Secured End-to-End
+                      <span className={`text-xs flex items-center gap-1.5 ${isChatPartnerOnline ? 'text-green-500' : 'text-gray-500'}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${isChatPartnerOnline ? 'bg-green-500' : 'bg-gray-600'}`}></span>
+                          {isChatPartnerOnline ? 'Online' : 'Offline'}
                       </span>
                   </div>
                 </div>
@@ -176,31 +202,31 @@ const Chat = () => {
             </div>
 
             {/* Chat Messages */}
-            <div className="flex-1 p-4 md:p-6 overflow-y-auto space-y-4 scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent">
+            <div ref={messagesRef} className="flex-1 min-w-0 p-4 md:p-6 overflow-y-auto overflow-x-hidden space-y-4 scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent">
               {messages.length === 0 ? (
                  <div className="h-full flex flex-col items-center justify-center text-gray-500">
-                    <p className="text-sm">This is the start of your secure conversation.</p>
+                    <p className="text-sm">No messages yet. Say hello 👋</p>
                  </div>
               ) : (
                 messages.map((m, index) => {
                   const isMe = m.sender === userId;
                   return (
-                    <div key={index} className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}>
-                      <div className={`max-w-[85%] md:max-w-[70%] p-3.5 text-sm shadow-sm
+                    <div key={m._id || index} className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}>
+                      <div className={`max-w-[85%] md:max-w-[70%] p-3.5 text-sm shadow-sm [overflow-wrap:anywhere]
+                        ${m.status === "sending" ? "opacity-60" : ""}
                         ${isMe 
                           ? "bg-green-600 text-black font-medium rounded-2xl rounded-br-sm" 
                           : "bg-[#111] border border-gray-800 text-gray-200 rounded-2xl rounded-bl-sm"}`}
                       >
-                        <p className="whitespace-pre-wrap leading-relaxed">{m.text || m.content}</p>
+                        <p className="whitespace-pre-wrap leading-relaxed">{m.content}</p>
                       </div>
-                      <span className="text-[10px] text-gray-600 mt-1 mx-1 font-medium">
-                        {formatTimestamp(m.createdAt)}
+                      <span className={`text-[10px] mt-1 mx-1 font-medium ${m.status === "failed" ? "text-red-400" : "text-gray-600"}`}>
+                        {m.status === "failed" ? "Not sent" : formatTimestamp(m.createdAt)}
                       </span>
                     </div>
                   );
                 })
               )}
-              <div ref={scrollRef}></div>
             </div>
 
             {/* Chat Input */}
@@ -210,15 +236,17 @@ const Chat = () => {
                   type="text" 
                   className="flex-1 bg-[#111] border border-gray-800 text-gray-200 rounded-full px-5 py-3.5 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all placeholder-gray-600" 
                   placeholder="Type your message..." 
+                  maxLength={2000}
                   onChange={(e) => setNewMessage(e.target.value)} 
                   value={newMessage} 
                 />
                 <button 
                   type="submit" 
+                  aria-label="Send message"
                   disabled={!newMessage.trim()}
                   className="h-12 w-12 bg-green-600 flex items-center justify-center rounded-full text-black hover:bg-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 shadow-lg shadow-green-900/20"
                 >
-                  <svg className="w-5 h-5 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                  <svg className="w-5 h-5 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
                 </button>
               </form>
             </div>

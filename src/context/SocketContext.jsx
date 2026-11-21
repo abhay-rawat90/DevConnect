@@ -36,6 +36,7 @@ export const SocketProvider = ({ children }) => {
       // Show notification if NOT on chat page
       if (pathRef.current !== "/chat") {
         toast(`📩 New message from ${data.senderName || "User"}`, {
+          id: `msg-${data.senderId}`, // several quick messages from one person -> one toast
           duration: 4000,
           position: "top-right",
           style: {

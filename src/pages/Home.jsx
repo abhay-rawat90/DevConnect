@@ -88,7 +88,7 @@ const Home = () => {
       </section>
 
       {/* MINIMAL FOOTER */}
-      <footer className="py-6 bg-[#050505] border-t border-gray-900 text-center text-xs text-gray-600 font-mono">
+      <footer className="py-6 bg-[#050505] border-t border-gray-900 text-center text-xs text-gray-500 font-mono">
         © {new Date().getFullYear()} DevConnect. Built for developers.
       </footer>
 

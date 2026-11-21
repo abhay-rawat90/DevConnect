@@ -1,1 +1,8 @@
 @import "tailwindcss";
+
+/* Dark base so there is no white flash on load or white edge when over-scrolling on phones */
+html,
+body {
+  background-color: #050505;
+  color-scheme: dark;
+}
